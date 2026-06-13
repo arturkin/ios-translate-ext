@@ -59,6 +59,11 @@ Translate Icelandic Extension/
 - **Settings storage:** App Group UserDefaults (`group.arturkin.Translate-Icelandic`), not the
   Keychain. Fine for a personal-use, low-value translator key; a shipping app should use the
   Keychain. The app writes; the extension reads.
+- **Hard-coded key (env file):** `Config/Secrets.xcconfig` (gitignored; copy from
+  `Config/Secrets.example.xcconfig`) feeds `AZURE_TRANSLATOR_KEY`/`AZURE_TRANSLATOR_REGION` into the
+  extension's Info.plist (`$(…)`), which `MessageRouter.configuredKey/Region` read as a fallback.
+  In-app settings take precedence. Public repo — never commit the real file. A fresh clone without
+  it builds fine (the `$(…)` placeholder is guarded) and falls back to MyMemory.
 - **`SharedStore.swift` is intentionally duplicated** in both targets and must be kept identical.
   Xcode 16 synchronized folder groups (`PBXFileSystemSynchronizedRootGroup`, objectVersion 77)
   can't share one file across targets without fragile project edits.

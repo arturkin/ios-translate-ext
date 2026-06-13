@@ -53,6 +53,7 @@
 		0BF3B6AF2FDDCA6100DBAA17 /* Translate IcelandicTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Translate IcelandicTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BF3B6B92FDDCA6100DBAA17 /* Translate IcelandicUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Translate IcelandicUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BF3B6C52FDDCA6200DBAA17 /* Translate Icelandic Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Translate Icelandic Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0BF3B6FA2FDDCA6200DBAA17 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Config/Secrets.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -144,6 +145,7 @@
 				0BF3B6B22FDDCA6100DBAA17 /* Translate IcelandicTests */,
 				0BF3B6BC2FDDCA6100DBAA17 /* Translate IcelandicUITests */,
 				0BF3B6C92FDDCA6200DBAA17 /* Translate Icelandic Extension */,
+				0BF3B6FA2FDDCA6200DBAA17 /* Secrets.xcconfig */,
 				0BF3B6932FDDCA6000DBAA17 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -385,6 +387,7 @@
 /* Begin XCBuildConfiguration section */
 		0BF3B6E12FDDCA6200DBAA17 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0BF3B6FA2FDDCA6200DBAA17 /* Secrets.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -419,6 +422,7 @@
 		};
 		0BF3B6E22FDDCA6200DBAA17 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0BF3B6FA2FDDCA6200DBAA17 /* Secrets.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;

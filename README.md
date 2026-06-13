@@ -68,6 +68,21 @@ App Group `group.arturkin.Translate-Icelandic`, which the extension reads.
 > No key yet? The extension still works using the keyless **MyMemory** fallback — lower quality
 > and rate-limited, but fine for trying it out.
 
+#### Optional: bake the key into local builds (env file)
+
+To skip entering the key in the app on every install, copy the env template and fill it in. The
+real file is **gitignored**, so your key never gets committed (this repo is public):
+
+```sh
+cp Config/Secrets.example.xcconfig Config/Secrets.xcconfig
+# then edit Config/Secrets.xcconfig:
+#   AZURE_TRANSLATOR_KEY = <your key>
+#   AZURE_TRANSLATOR_REGION = westeurope
+```
+
+The extension reads these at build time (via its Info.plist) as a fallback; a key entered in the
+app still takes precedence. Rebuild after editing.
+
 ### 2. Build & run (paid Apple Developer account)
 
 1. Open `Translate Icelandic.xcodeproj` in Xcode.

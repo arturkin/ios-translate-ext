@@ -9,5 +9,9 @@
 		<key>NSExtensionPrincipalClass</key>
 		<string>$(PRODUCT_MODULE_NAME).SafariWebExtensionHandler</string>
 	</dict>
+	<key>AzureKey</key>
+	<string>$(AZURE_TRANSLATOR_KEY)</string>
+	<key>AzureRegion</key>
+	<string>$(AZURE_TRANSLATOR_REGION)</string>
 </dict>
 </plist>

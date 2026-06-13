@@ -20,6 +20,8 @@ DerivedData/
 .build/
 .swiftpm/
 
-# Local secrets — never commit API keys
+# Local secrets — never commit API keys (public repo!)
+# The real env file with your key is gitignored; only the *.example template is tracked.
+Config/Secrets.xcconfig
 *.local.xcconfig
 secrets.xcconfig
