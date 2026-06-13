@@ -24,7 +24,9 @@ enum InflectionService {
         }
 
         let search = try await results(query: [("search", trimmed), ("type", "flat")])
-        guard let first = search.first(where: { $0["BIN_id"] != nil }) else {
+        // Note: must test for NSNumber, not `!= nil` — a JSON `null` BIN_id decodes to
+        // NSNull (which is non-nil), and would be selected over a later valid entry.
+        guard let first = search.first(where: { ($0["BIN_id"] as? NSNumber) != nil }) else {
             return ["ok": true, "lemma": trimmed, "wordClass": "",
                     "forms": [[String: String]](), "sourceUrl": binURL(trimmed)]
         }

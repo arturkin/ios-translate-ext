@@ -77,6 +77,11 @@ Translate Icelandic Extension/
 ## Build & test
 
 ```sh
+# Full QA harness: JS logic + config + live API contracts + build + unit tests
+./scripts/qa.sh
+./scripts/qa.sh --fast    # quick checks only (skip Xcode build/tests)
+
+# Or directly:
 # Compile app + extension for the simulator (no signing)
 xcodebuild -scheme "Translate Icelandic" -sdk iphonesimulator \
   -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
@@ -87,7 +92,9 @@ xcodebuild -scheme "Translate Icelandic" -sdk iphonesimulator \
   -only-testing:"Translate IcelandicTests" test
 ```
 
-On-device QA checklist: [`docs/QA.md`](docs/QA.md).
+QA harness: `scripts/qa.sh` (+ `scripts/qa/check_js.mjs`, `check_apis.py`). On-device checklist:
+[`docs/QA.md`](docs/QA.md). The harness validates the Icelandic detector, JS syntax, config
+validity, the live external-API contracts, the build, and unit tests without a device.
 
 ## External APIs
 

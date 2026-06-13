@@ -77,8 +77,11 @@ struct SettingsView: View {
                     Button(saved ? "Saved ✓" : "Save") { save() }
                 }
             }
-            // Persist toggles immediately so the extension picks them up without a Save tap.
+            // Persist every field as it changes so the extension picks it up and the
+            // key can never be silently lost by forgetting to tap Save.
             .onChange(of: provider) { _, _ in save() }
+            .onChange(of: apiKey) { _, _ in save() }
+            .onChange(of: region) { _, _ in save() }
             .onChange(of: tapToTranslate) { _, _ in save() }
             .onChange(of: autoTranslate) { _, _ in save() }
             .onChange(of: useWiktionary) { _, _ in save() }

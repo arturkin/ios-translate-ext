@@ -93,10 +93,14 @@
             });
             try {
                 const out = await TI.bg.translate(parts.map((p) => p.core), "is", "en");
+                if (!enabled) return; // toggled off mid-flight — don't re-apply English
                 nodes.forEach((node, j) => {
                     if (!node.isConnected || originals.has(node)) return;
                     const t = out[j];
-                    if (typeof t !== "string" || !t) return;
+                    // Skip empties and no-op/fallback results (translation === source):
+                    // don't mark the node done with untranslated text — let a later
+                    // pass retry it instead of freezing it as "translated".
+                    if (typeof t !== "string" || t === "" || t === parts[j].core) return;
                     originals.set(node, node.nodeValue);   // mark before edit so MO skips it
                     node.nodeValue = parts[j].lead + t + parts[j].trail;
                 });

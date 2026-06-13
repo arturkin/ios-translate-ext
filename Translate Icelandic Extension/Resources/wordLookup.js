@@ -72,7 +72,7 @@
 
     // Full single-word panel: gloss + definition + inflections.
     function lookupWord(word, rect) {
-        const { body } = TI.ui.open(rect);
+        const { body, reposition } = TI.ui.open(rect);
         body.appendChild(mk("div", "headword", word));
         const lemmaEl = mk("div", "lemma", "");
         body.appendChild(lemmaEl);
@@ -81,8 +81,8 @@
         body.appendChild(glossEl);
 
         TI.bg.translate([word], "is", "en")
-            .then((t) => { glossEl.textContent = (t && t[0]) || "—"; })
-            .catch((e) => { glossEl.textContent = ""; glossEl.appendChild(mk("span", "err", e.message)); });
+            .then((t) => { glossEl.textContent = (t && t[0]) || "—"; reposition(); })
+            .catch((e) => { glossEl.textContent = ""; glossEl.appendChild(mk("span", "err", e.message)); reposition(); });
 
         const S = TI.settings || {};
         if (S.useWiktionary !== false) {
@@ -91,8 +91,8 @@
             loading.appendChild(TI.ui.spinner());
             sec.appendChild(loading);
             TI.bg.define(word)
-                .then((r) => { loading.remove(); renderDefinition(sec, r); })
-                .catch(() => { loading.remove(); sec.appendChild(mk("div", "muted", "No definition found.")); });
+                .then((r) => { loading.remove(); renderDefinition(sec, r); reposition(); })
+                .catch(() => { loading.remove(); sec.appendChild(mk("div", "muted", "No definition found.")); reposition(); });
         }
         if (S.useBin !== false) {
             const sec = section(body, "Inflections");
@@ -108,22 +108,23 @@
                         lemmaEl.textContent = r.wordClass;
                     }
                     renderInflection(sec, r);
+                    reposition();
                 })
-                .catch(() => { loading.remove(); sec.appendChild(mk("div", "muted", "No inflections found.")); });
+                .catch(() => { loading.remove(); sec.appendChild(mk("div", "muted", "No inflections found.")); reposition(); });
         }
     }
 
     // Lightweight phrase panel: just the gloss.
     function lookupPhrase(text, rect) {
-        const { body } = TI.ui.open(rect);
+        const { body, reposition } = TI.ui.open(rect);
         const head = mk("div", "lemma", text.length > 80 ? text.slice(0, 80) + "…" : text);
         body.appendChild(head);
         const glossEl = mk("div", "gloss");
         glossEl.appendChild(TI.ui.spinner());
         body.appendChild(glossEl);
         TI.bg.translate([text], "is", "en")
-            .then((t) => { glossEl.textContent = (t && t[0]) || "—"; })
-            .catch((e) => { glossEl.textContent = ""; glossEl.appendChild(mk("span", "err", e.message)); });
+            .then((t) => { glossEl.textContent = (t && t[0]) || "—"; reposition(); })
+            .catch((e) => { glossEl.textContent = ""; glossEl.appendChild(mk("span", "err", e.message)); reposition(); });
     }
 
     function caretWord(x, y) {

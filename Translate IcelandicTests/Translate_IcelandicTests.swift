@@ -18,12 +18,23 @@ final class Translate_IcelandicTests: XCTestCase {
         SharedStore.Key.tapToTranslate, SharedStore.Key.autoTranslate,
     ]
 
+    // Snapshot the real App Group values and restore them after each test, so running
+    // the suite on a device never wipes the user's saved key/region/toggles.
+    private var snapshot: [String: Any] = [:]
+
     override func setUpWithError() throws {
-        keys.forEach { SharedStore.defaults.removeObject(forKey: $0) }
+        snapshot = [:]
+        for k in keys {
+            if let v = SharedStore.defaults.object(forKey: k) { snapshot[k] = v }
+            SharedStore.defaults.removeObject(forKey: k)
+        }
     }
 
     override func tearDownWithError() throws {
-        keys.forEach { SharedStore.defaults.removeObject(forKey: $0) }
+        for k in keys {
+            if let v = snapshot[k] { SharedStore.defaults.set(v, forKey: k) }
+            else { SharedStore.defaults.removeObject(forKey: k) }
+        }
     }
 
     func testDefaultsWhenUnset() {

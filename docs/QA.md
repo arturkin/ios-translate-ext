@@ -1,7 +1,23 @@
-# On-device QA checklist
+# QA checklist
 
-Run this on your iPhone before relying on the extension. The goal is to confirm the full path
-works end to end on both a server-rendered site and a dynamic one.
+## Automated harness (run this first)
+
+```sh
+./scripts/qa.sh            # JS logic + config + live API contracts + build + unit tests
+./scripts/qa.sh --fast     # skip the Xcode build/tests (quick checks only)
+# Optionally validate the default backend too:
+AZURE_TRANSLATOR_KEY=… AZURE_TRANSLATOR_REGION=… ./scripts/qa.sh
+```
+
+This validates everything that doesn't need a device: the Icelandic-detector logic, JS syntax,
+plist/entitlement/JSON validity, the live external-API contracts (MyMemory, Wiktionary, BÍN), the
+build, and the unit tests. Run it before the manual pass below and before signing off.
+
+## On-device checklist
+
+Run this on your iPhone too — the parts a harness can't cover (Safari rendering, tap gestures,
+Facebook's dynamic feed). The goal is to confirm the full path works end to end on both a
+server-rendered site and a dynamic one.
 
 ## Setup
 

@@ -17,9 +17,22 @@ struct FallbackTranslationProvider: TranslationProvider {
         let langPair = "\(from)|\(to)"
         var out: [String] = []
         out.reserveCapacity(texts.count)
+        var anySucceeded = false
+        var lastError: Error?
         for text in texts {
-            out.append(try await translateOne(text, langPair: langPair))
+            do {
+                out.append(try await translateOne(text, langPair: langPair))
+                anySucceeded = true
+            } catch {
+                // Keep the source text for this item so a single failure (e.g. a
+                // MyMemory rate-limit) doesn't discard the rest of the batch. The
+                // caller skips source==translation results, so they retry later.
+                out.append(text)
+                lastError = error
+            }
         }
+        // If nothing translated at all, surface the error so the user sees a toast.
+        if !anySucceeded, let lastError, !texts.isEmpty { throw lastError }
         return out
     }
 

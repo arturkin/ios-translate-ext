@@ -75,7 +75,9 @@ async function doTranslate(p) {
         const translated = resp.translations || [];
         uniq.forEach((t, k) => {
             const tr = translated[k];
-            if (typeof tr === "string") trCache.set(ck(from, to, t), tr);
+            // Only cache real translations — never an empty string (a parse miss or
+            // provider failure), which would otherwise poison the cache permanently.
+            if (typeof tr === "string" && tr !== "") trCache.set(ck(from, to, t), tr);
         });
         saveCacheSoon();
         for (const i of needIdx) {
@@ -86,10 +88,12 @@ async function doTranslate(p) {
     return { ok: true, translations: out };
 }
 
-async function cached(map, key, fn) {
+async function cached(map, key, fn, worthCaching) {
     if (map.has(key)) return map.get(key);
     const r = await fn();
-    map.set(key, r);
+    // Don't memoize empty/negative results, so a transient miss (e.g. a 404 blip)
+    // can be retried instead of being stuck for the lifetime of the worker.
+    if (!worthCaching || worthCaching(r)) map.set(key, r);
     return r;
 }
 
@@ -98,11 +102,13 @@ function handle(msg) {
         case "translate":
             return doTranslate(msg.payload);
         case "define":
-            return cached(defCache, msg.payload.word, () =>
-                native({ type: "define", payload: msg.payload }));
+            return cached(defCache, msg.payload.word,
+                () => native({ type: "define", payload: msg.payload }),
+                (r) => Array.isArray(r.entries) && r.entries.length > 0);
         case "inflect":
-            return cached(inflCache, msg.payload.word, () =>
-                native({ type: "inflect", payload: msg.payload }));
+            return cached(inflCache, msg.payload.word,
+                () => native({ type: "inflect", payload: msg.payload }),
+                (r) => Array.isArray(r.forms) && r.forms.length > 0);
         case "status":
             return native({ type: "status", payload: {} });
         default:

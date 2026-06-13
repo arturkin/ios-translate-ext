@@ -15,7 +15,9 @@ async function activeTab() {
 async function tellTab(command, extra) {
     const tab = await activeTab();
     if (!tab) throw new Error("no active tab");
-    return browser.tabs.sendMessage(tab.id, Object.assign({ command }, extra));
+    // Target the top frame only — with all_frames the message would otherwise fan
+    // out to every iframe and the popup could bind to/drive an arbitrary subframe.
+    return browser.tabs.sendMessage(tab.id, Object.assign({ command }, extra), { frameId: 0 });
 }
 
 async function refreshStatus() {
