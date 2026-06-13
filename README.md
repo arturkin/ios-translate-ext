@@ -83,12 +83,56 @@ App Group `group.arturkin.Translate-Icelandic`, which the extension reads.
 On the iPhone: **Settings → Apps → Safari → Extensions → Translate Icelandic** → turn it on and
 set permission to **Allow on Every Website**.
 
-## Usage
+## Activating & using all features
 
-- Tap the extension button in Safari's toolbar to toggle **Translate this page** and
-  **Tap a word to look it up** for the current page.
-- With tap mode on, tap any Icelandic word for the gloss + Look Up panel, or select a phrase to
-  translate it. Links and buttons keep working — only plain text taps are intercepted.
+### Enable the extension (first run)
+
+1. **Install** — Run the host app from Xcode onto your iPhone. This installs the app *and* the
+   embedded extension.
+2. **Turn it on** — On the iPhone: **Settings → Apps → Safari → Extensions → Translate Icelandic**
+   → toggle it **on**. (You can also do this from Safari: tap the **Extensions** button — the
+   puzzle-piece icon in the toolbar — or the page/format menu next to the address bar →
+   **Manage Extensions**.)
+3. **Grant access** — In that same extension screen set **Permissions** to **Allow on Every
+   Website** (or allow per-site the first time you visit one). Without this the popup toggles stay
+   greyed out and nothing happens on the page.
+4. **Add your key** — Open the **Translate Icelandic** app, paste your Azure **Key** + **Region**
+   (they save automatically), then tap **Test connection** (expect `✓ Halló → Hello`). Skip this
+   to use the free MyMemory fallback.
+
+### The toolbar popup (per-page controls)
+
+Tap the **Extensions** (puzzle-piece) button in Safari's toolbar → **Translate Icelandic**:
+
+- **Translate this page** — on: replaces Icelandic text with English in place; off: restores the
+  original. Keeps up with dynamic feeds (new posts translate as they load) and translates
+  on-screen text first as you scroll.
+- **Tap a word to look it up** — on by default (see below).
+- A status line shows the active backend (**Azure** or **free fallback**).
+
+### Features
+
+- **Tap a word** (tap mode on) → a popover with the English **gloss**, the **Wiktionary**
+  definition, and the **BÍN inflection table**. Tapping an inflected form (e.g. *hússins*)
+  resolves the lemma (*hús*); **More on Wiktionary ↗** / **Full table on BÍN ↗** open the full
+  entries. Links and buttons on the page still work — only plain-text taps are intercepted.
+- **Select a phrase** → a popover translating the whole selection.
+- **Full-page reading** → the *Translate this page* toggle above.
+- **App settings** (in the host app, not the popup): backend + key/region, **Provider** (Azure or
+  free), **Auto-translate Icelandic pages** (off by default — turn on to translate without flipping
+  the toggle each time), and the **Wiktionary / BÍN** look-up sources.
+
+Translations are cached on-device, so re-reading a page or revisiting words doesn't re-hit the API.
+
+### Troubleshooting
+
+- **Toggles greyed out / "Not available on this page"** → the extension lacks permission for this
+  site; allow it from the popup or set **Allow on Every Website**. Some pages (`about:`, the App
+  Store, Apple domains) can't be extended.
+- **Shows "free fallback" when you expected Azure** → the key isn't saved or is wrong; re-open the
+  app and run **Test connection**.
+- **App/extension stopped working after a while** → re-run from Xcode (a paid-account build lasts a
+  year; a free one expires after 7 days).
 
 ## Swapping the translation backend
 
@@ -97,18 +141,34 @@ The backend is a single seam: implement `TranslationProvider` and wire it into
 `Translate Icelandic Extension/Services/AzureTranslationProvider.swift` for the reference
 implementation and `FallbackTranslationProvider.swift` for the keyless option.
 
-## Testing
+## Testing & releasing
 
-- **Unit tests:** `Translate IcelandicTests` (settings contract). Run:
-  ```sh
-  xcodebuild -scheme "Translate Icelandic" -sdk iphonesimulator \
-    -destination 'platform=iOS Simulator,name=iPhone 16' \
-    -only-testing:"Translate IcelandicTests" test
-  ```
-- **On-device QA** before relying on it: see the checklist in
-  [`docs/QA.md`](docs/QA.md) — covers SSR sites, Facebook's dynamic feed, tap-a-word,
-  inflected-form lemma resolution, the Icelandic/English detector, special characters, the
-  free→Azure switch, caching, and error handling.
+### Test
+
+```sh
+./scripts/qa.sh            # JS logic + config + live API contracts + build + unit tests
+./scripts/qa.sh --fast     # quick checks only (skip the Xcode build/tests)
+AZURE_TRANSLATOR_KEY=… AZURE_TRANSLATOR_REGION=… ./scripts/qa.sh   # also exercise Azure
+```
+
+The harness validates everything that doesn't need a device — the Icelandic detector, JS syntax,
+plist/entitlement/JSON validity, the live external-API contracts (MyMemory, Wiktionary, BÍN), the
+build, and the unit tests. Run it before every release. Then do the on-device pass in
+[`docs/QA.md`](docs/QA.md) (Safari rendering, tap gestures, Facebook's feed) — the parts a harness
+can't cover.
+
+### Release (personal use)
+
+There's no App Store step — "release" just means putting a longer-lived build on your phone:
+
+1. **Build for Release** — in Xcode, Edit Scheme → Run → Build Configuration → **Release**, or use
+   **Product → Archive**.
+2. **Install to your iPhone.** With the **paid** developer account the build is signed for **1
+   year**, so it keeps working without re-deploying (a free account expires in 7 days).
+3. **Update** — bump `MARKETING_VERSION`/build number, re-run `./scripts/qa.sh`, then re-run or
+   re-archive to the device.
+4. *(Optional)* For over-the-air installs to your own devices, push a build to **TestFlight**
+   (internal testing) via App Store Connect — still no public listing required.
 
 ## Privacy
 
