@@ -2,7 +2,9 @@
 //  Translate_IcelandicTests.swift
 //  Translate IcelandicTests
 //
-//  Created by Artur Alekseev on 13.6.2026.
+//  Tests for SharedStore — the settings contract the app writes and the Safari
+//  extension reads. Getting the defaults and the empty-string handling right
+//  matters because a wrong default silently changes the extension's behaviour.
 //
 
 import XCTest
@@ -10,27 +12,47 @@ import XCTest
 
 final class Translate_IcelandicTests: XCTestCase {
 
+    private let keys = [
+        SharedStore.Key.azureKey, SharedStore.Key.azureRegion, SharedStore.Key.provider,
+        SharedStore.Key.useWiktionary, SharedStore.Key.useBin,
+        SharedStore.Key.tapToTranslate, SharedStore.Key.autoTranslate,
+    ]
+
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+        keys.forEach { SharedStore.defaults.removeObject(forKey: $0) }
     }
 
     override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+        keys.forEach { SharedStore.defaults.removeObject(forKey: $0) }
     }
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
+    func testDefaultsWhenUnset() {
+        XCTAssertEqual(SharedStore.provider, "azure")
+        XCTAssertNil(SharedStore.azureKey)
+        XCTAssertNil(SharedStore.azureRegion)
+        XCTAssertTrue(SharedStore.useWiktionary)
+        XCTAssertTrue(SharedStore.useBin)
+        XCTAssertTrue(SharedStore.tapToTranslate)        // tap-to-translate defaults ON
+        XCTAssertFalse(SharedStore.autoTranslate)        // auto-translate defaults OFF
     }
 
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
+    func testRoundTrip() {
+        SharedStore.provider = "free"
+        SharedStore.azureKey = "secret-key"
+        SharedStore.azureRegion = "westeurope"
+        SharedStore.useWiktionary = false
+        SharedStore.autoTranslate = true
+
+        XCTAssertEqual(SharedStore.provider, "free")
+        XCTAssertEqual(SharedStore.azureKey, "secret-key")
+        XCTAssertEqual(SharedStore.azureRegion, "westeurope")
+        XCTAssertFalse(SharedStore.useWiktionary)
+        XCTAssertTrue(SharedStore.autoTranslate)
+        XCTAssertTrue(SharedStore.useBin)                // untouched key keeps its default
     }
 
+    func testBlankKeyIsTreatedAsUnset() {
+        SharedStore.azureKey = "   "
+        XCTAssertNil(SharedStore.azureKey, "Whitespace-only key must read back as nil so we fall back to the free provider")
+    }
 }

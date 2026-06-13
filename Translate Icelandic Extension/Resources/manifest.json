@@ -20,8 +20,17 @@
     },
 
     "content_scripts": [{
-        "js": [ "content.js" ],
-        "matches": [ "*://example.com/*" ]
+        "js": [
+            "messaging.js",
+            "icelandic.js",
+            "ui.js",
+            "pageTranslator.js",
+            "wordLookup.js",
+            "content.js"
+        ],
+        "matches": [ "<all_urls>" ],
+        "run_at": "document_idle",
+        "all_frames": true
     }],
 
     "action": {
@@ -29,5 +38,5 @@
         "default_icon": "images/toolbar-icon.svg"
     },
 
-    "permissions": [ ]
+    "permissions": [ "storage", "nativeMessaging", "activeTab", "tabs" ]
 }

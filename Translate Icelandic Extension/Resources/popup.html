@@ -2,10 +2,24 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="popup.css">
     <script type="module" src="popup.js"></script>
 </head>
 <body>
-    <strong>Hello World!</strong>
+    <h1>Translate Icelandic</h1>
+
+    <label class="row">
+        <span>Translate this page</span>
+        <input type="checkbox" id="page">
+    </label>
+
+    <label class="row">
+        <span>Tap a word to look it up</span>
+        <input type="checkbox" id="tap">
+    </label>
+
+    <div id="status" class="status">Checking…</div>
+    <div id="hint" class="hint">Set your Azure key in the Translate Icelandic app for best quality.</div>
 </body>
 </html>
