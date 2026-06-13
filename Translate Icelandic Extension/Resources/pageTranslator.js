@@ -16,7 +16,8 @@
         "SCRIPT", "STYLE", "NOSCRIPT", "TEXTAREA", "INPUT", "SELECT", "OPTION",
         "CODE", "PRE", "KBD", "SAMP", "SVG", "MATH", "TITLE"
     ]);
-    const CHUNK = 40;          // text nodes per translate request
+    const CHUNK = 40;          // max text nodes per translate request
+    const MAX_CHARS = 9000;    // max chars per request (well under the API's 50k cap)
     const FLUSH_MS = 150;      // debounce before sending a batch
     const MUTATE_MS = 400;     // debounce for re-scanning mutated DOM
 
@@ -24,6 +25,8 @@
     let io = null, mo = null;
     let flushTimer = null, mutateTimer = null;
     let erroredOnce = false;
+    let pendingRoots = [];                  // subtrees added/changed since last re-scan
+    let pendingFull = false;                // coalesce a mutation storm into one full scan
     const originals = new Map();           // TextNode -> original string (translated nodes)
     const queued = new Set();              // TextNode pending translation
     const elementNodes = new Map();        // Element -> Set<TextNode> waiting to be seen
@@ -85,8 +88,18 @@
         queued.clear();
         if (!batch.length) return;
 
-        for (let i = 0; i < batch.length; i += CHUNK) {
-            const nodes = batch.slice(i, i + CHUNK);
+        let i = 0;
+        while (i < batch.length) {
+            // Pack a request up to CHUNK nodes AND ~MAX_CHARS, so a page of long
+            // paragraphs never exceeds the translation API's per-request limit.
+            const nodes = [];
+            let chars = 0;
+            while (i < batch.length && nodes.length < CHUNK &&
+                   (nodes.length === 0 || chars + batch[i].nodeValue.length <= MAX_CHARS)) {
+                nodes.push(batch[i]);
+                chars += batch[i].nodeValue.length;
+                i++;
+            }
             const parts = nodes.map((n) => {
                 const m = n.nodeValue.match(/^(\s*)([\s\S]*?)(\s*)$/);
                 return { lead: m[1], core: m[2], trail: m[3] };
@@ -105,24 +118,46 @@
                     node.nodeValue = parts[j].lead + t + parts[j].trail;
                 });
             } catch (err) {
+                // Re-queue everything we didn't apply (this chunk + the rest) so a
+                // later pass retries instead of losing the text permanently.
+                for (const n of nodes) { if (n.isConnected && !originals.has(n)) queued.add(n); }
+                for (let k = i; k < batch.length; k++) {
+                    if (batch[k].isConnected && !originals.has(batch[k])) queued.add(batch[k]);
+                }
                 if (!erroredOnce) {
                     erroredOnce = true;
                     TI.ui.toast("Translation failed: " + err.message, "err");
+                    setTimeout(() => { if (enabled) scheduleFlush(); }, 2000); // one auto-retry
                 }
-                return; // leave the rest un-marked so a later pass can retry
+                return;
             }
         }
     }
 
     function onMutations(records) {
-        if (!enabled || mutateTimer) return;
-        // Only react to structural / text changes, not our own attribute noise.
-        const relevant = records.some((r) => r.addedNodes.length || r.type === "characterData");
-        if (!relevant) return;
+        if (!enabled) return;
+        // Collect just the added/changed subtrees, not the whole document — this is
+        // critical on infinite feeds (Facebook) that mutate constantly.
+        for (const r of records) {
+            if (pendingFull) break;
+            if (r.type === "characterData") {
+                if (r.target) pendingRoots.push(r.target);
+            } else if (r.addedNodes && r.addedNodes.length) {
+                for (const n of r.addedNodes) pendingRoots.push(n);
+            }
+        }
+        // A mutation storm → coalesce into one whole-document re-scan rather than
+        // thousands of overlapping subtree walks.
+        if (pendingRoots.length > 400) { pendingFull = true; pendingRoots = []; }
+        if ((!pendingRoots.length && !pendingFull) || mutateTimer) return;
         mutateTimer = setTimeout(() => {
             mutateTimer = null;
-            // Re-scan body; isCandidate() skips everything already handled.
-            scan(document.body);
+            const roots = pendingRoots; pendingRoots = [];
+            const full = pendingFull; pendingFull = false;
+            if (full) { scan(document.body); return; }
+            for (const root of roots) {
+                if (root && root.isConnected) scan(root); // isCandidate() skips handled nodes
+            }
         }, MUTATE_MS);
     }
 
@@ -149,6 +184,8 @@
         originals.clear();
         queued.clear();
         elementNodes.clear();
+        pendingRoots = [];
+        pendingFull = false;
     }
 
     TI.page = { enable, revert, get active() { return enabled; } };

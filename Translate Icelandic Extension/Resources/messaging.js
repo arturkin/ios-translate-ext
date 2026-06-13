@@ -15,11 +15,19 @@
     // The background always answers with { ok, ... }. We unwrap errors into rejects
     // so callers can use try/await.
     async function request(type, payload) {
+        // Backstop so the UI never spins forever if the background worker is torn
+        // down mid-request or a native call stalls past its own timeout.
+        let timer;
+        const timeout = new Promise((_, reject) => {
+            timer = setTimeout(() => reject(new Error("request timed out")), 20000);
+        });
         let response;
         try {
-            response = await browser.runtime.sendMessage({ type, payload });
+            response = await Promise.race([browser.runtime.sendMessage({ type, payload }), timeout]);
         } catch (e) {
             throw new Error("extension messaging failed: " + (e && e.message ? e.message : e));
+        } finally {
+            clearTimeout(timer);
         }
         if (!response || response.ok !== true) {
             throw new Error((response && response.error) || "unknown background error");

@@ -43,7 +43,9 @@ struct FallbackTranslationProvider: TranslationProvider {
             URLQueryItem(name: "q", value: text),
             URLQueryItem(name: "langpair", value: langPair),
         ]
-        let (data, resp) = try await URLSession.shared.data(from: comps.url!)
+        var req = URLRequest(url: comps.url!)
+        req.timeoutInterval = 15
+        let (data, resp) = try await URLSession.shared.data(for: req)
         guard let http = resp as? HTTPURLResponse else { throw TranslationError.badResponse }
         guard (200..<300).contains(http.statusCode) else {
             throw TranslationError.http(http.statusCode, "")

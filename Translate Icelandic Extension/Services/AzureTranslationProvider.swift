@@ -32,11 +32,15 @@ struct AzureTranslationProvider: TranslationProvider {
         if let region, !region.isEmpty {
             req.setValue(region, forHTTPHeaderField: "Ocp-Apim-Subscription-Region")
         }
+        req.timeoutInterval = 15
         req.httpBody = try JSONSerialization.data(withJSONObject: texts.map { ["Text": $0] })
 
         let (data, resp) = try await URLSession.shared.data(for: req)
         guard let http = resp as? HTTPURLResponse else { throw TranslationError.badResponse }
         guard (200..<300).contains(http.statusCode) else {
+            if http.statusCode == 401 || http.statusCode == 403 {
+                throw TranslationError.http(http.statusCode, "check your Azure key and region")
+            }
             throw TranslationError.http(http.statusCode, String(data: data, encoding: .utf8) ?? "")
         }
 

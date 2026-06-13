@@ -2,25 +2,36 @@
     color-scheme: light dark;
 }
 
+html, body {
+    height: auto;
+}
+
 body {
-    width: 240px;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 260px;
     margin: 0;
-    padding: 14px 16px;
+    padding: 18px 20px calc(16px + env(safe-area-inset-bottom));
     font-family: -apple-system, system-ui, sans-serif;
-    font-size: 15px;
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
 }
 
 h1 {
-    font-size: 16px;
-    margin: 0 0 12px;
+    font-size: 18px;
+    margin: 0 0 14px;
 }
 
 .row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    padding: 7px 0;
+    gap: 12px;
+    padding: 11px 0;
+}
+
+.row + .row {
+    border-top: 1px solid rgba(128, 128, 128, .18);
 }
 
 .row span {
@@ -28,20 +39,21 @@ h1 {
 }
 
 input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
+    flex: none;
 }
 
 .status {
-    margin-top: 12px;
-    padding-top: 10px;
+    margin-top: 16px;
+    padding-top: 12px;
     border-top: 1px solid rgba(128, 128, 128, .3);
-    font-size: 13px;
+    font-size: 14px;
     color: #8e8e93;
 }
 
 .hint {
-    margin-top: 6px;
-    font-size: 12px;
+    margin-top: 8px;
+    font-size: 13px;
     color: #8e8e93;
 }

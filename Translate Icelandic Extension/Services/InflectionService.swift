@@ -57,7 +57,7 @@ enum InflectionService {
         let trimmed = word.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
         let search = try? await results(query: [("search", trimmed), ("type", "flat")])
-        return search?.first(where: { $0["base_word"] != nil })?["base_word"] as? String
+        return search?.first(where: { ($0["base_word"] as? String) != nil })?["base_word"] as? String
     }
 
     private static func results(query: [(String, String)]) async throws -> [[String: Any]] {
@@ -66,6 +66,7 @@ enum InflectionService {
         guard let url = comps.url else { return [] }
         var req = URLRequest(url: url)
         req.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+        req.timeoutInterval = 12
 
         let (data, resp) = try await URLSession.shared.data(for: req)
         guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {

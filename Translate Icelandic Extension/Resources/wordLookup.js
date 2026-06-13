@@ -1,16 +1,19 @@
-// wordLookup.js — the learning feature: tap a word (or select a phrase) to get an
-// instant English gloss plus a deeper "Look Up" panel (Wiktionary definition +
-// BÍN inflection table).
+// wordLookup.js — the learning feature: tap a word (two taps) for an instant
+// English gloss plus a deeper "Look Up" panel (Wiktionary definition + BÍN
+// inflection table), and a "Translate" chip on any text selection.
 //
 // Tapping is gated behind a toggle so it never hijacks normal browsing. When the
-// toggle is on, a tap on plain text looks the word up (and is swallowed), while
-// taps on links/buttons pass straight through.
+// toggle is on, the FIRST tap on a word highlights it and the SECOND tap on the
+// same word looks it up (and is swallowed); taps on links/buttons pass through.
+// The selection "Translate" chip works regardless of the tap toggle.
 
 (() => {
     "use strict";
     const TI = (window.__TI__ = window.__TI__ || {});
 
     let tapEnabled = false;
+    let armed = null;          // { word, rect, range } awaiting a confirming second tap
+    let hlStyleAdded = false;
 
     function mk(tag, cls, text) {
         const el = document.createElement(tag);
@@ -39,10 +42,18 @@
         if (!entries.length) {
             sec.appendChild(mk("div", "muted", "No Wiktionary entry."));
         } else {
-            for (const e of entries.slice(0, 4)) {
+            for (const e of entries.slice(0, 6)) {
                 const d = mk("div", "def");
                 if (e.partOfSpeech) d.appendChild(mk("span", "pos", e.partOfSpeech));
-                d.appendChild(document.createTextNode((e.definitions || []).slice(0, 3).join("; ")));
+                const defs = (e.definitions || []).slice(0, 6);
+                if (defs.length <= 1) {
+                    d.appendChild(document.createTextNode(defs[0] || "—"));
+                } else {
+                    // Multiple senses → show them as a numbered list, not a run-on line.
+                    const ol = mk("ol", "defs");
+                    for (const def of defs) ol.appendChild(mk("li", null, def));
+                    d.appendChild(ol);
+                }
                 sec.appendChild(d);
             }
         }
@@ -146,36 +157,77 @@
         const range = document.createRange();
         range.setStart(node, info.start);
         range.setEnd(node, info.end);
-        return { word: info.word, rect: range.getBoundingClientRect() };
+        return { word: info.word, rect: range.getBoundingClientRect(), range };
+    }
+
+    // --- armed-word highlight (first tap) -------------------------------------
+    // Uses the CSS Custom Highlight API (Safari/iOS 17.4+) so we never touch the
+    // page DOM. A no-op highlight is fine on the rare engine that lacks it.
+
+    function highlightSupported() {
+        return typeof window.CSS !== "undefined" && !!CSS.highlights && typeof Highlight !== "undefined";
+    }
+    function ensureHighlightStyle() {
+        if (hlStyleAdded || !highlightSupported()) return;
+        const st = mk("style");
+        st.textContent = "::highlight(ti-armed){ background-color: rgba(0,122,255,.28); border-radius: 3px; }";
+        (document.head || document.documentElement).appendChild(st);
+        hlStyleAdded = true;
+    }
+    function setArmed(hit) {
+        armed = hit;
+        if (highlightSupported()) {
+            ensureHighlightStyle();
+            try { CSS.highlights.set("ti-armed", new Highlight(hit.range)); } catch (_) { /* ignore */ }
+        }
+    }
+    function clearArmed() {
+        armed = null;
+        if (highlightSupported()) { try { CSS.highlights.delete("ti-armed"); } catch (_) { /* ignore */ } }
+    }
+    function sameHit(a, b) {
+        if (!a || !b || a.word !== b.word) return false;
+        // Compare by on-screen position, not node identity: dynamic pages (and our
+        // own page-translator) can replace the text node between the two taps.
+        return Math.abs(a.rect.left - b.rect.left) < 12 && Math.abs(a.rect.top - b.rect.top) < 12;
     }
 
     const INTERACTIVE = 'a, button, input, textarea, select, [role="button"], [contenteditable=""], [contenteditable="true"]';
 
     function onClick(e) {
         if (!tapEnabled) return;
+        if (TI.ui.ownsEvent && TI.ui.ownsEvent(e)) return; // taps on our own UI
         const sel = window.getSelection();
-        if (sel && !sel.isCollapsed) return;             // selection handler owns this
+        if (sel && !sel.isCollapsed) return;               // selection chip owns this
         if (e.target.closest && e.target.closest(INTERACTIVE)) return;
         const hit = caretWord(e.clientX, e.clientY);
-        if (!hit || !hit.word) return;
+        if (!hit || !hit.word) { clearArmed(); return; }
         e.preventDefault();
         e.stopPropagation();
-        lookupWord(hit.word, hit.rect);
+        if (sameHit(armed, hit)) {
+            const word = hit.word, rect = hit.rect;        // confirmed: second tap
+            clearArmed();
+            lookupWord(word, rect);
+        } else {
+            setArmed(hit);                                 // first tap: highlight only
+        }
     }
+
+    // --- selection "Translate" chip (works with tap mode on or off) -----------
 
     let selTimer = null;
     function onSelectionEnd() {
-        if (!tapEnabled) return;
         if (selTimer) clearTimeout(selTimer);
         selTimer = setTimeout(() => {
+            if (TI.ui.visible) return;     // a lookup popover is already open
             const sel = window.getSelection();
-            if (!sel || sel.isCollapsed || !sel.rangeCount) return;
+            if (!sel || sel.isCollapsed || !sel.rangeCount) { TI.ui.hideSelectionButton(); return; }
             const text = sel.toString().trim();
-            if (text.length < 2 || !TI.ice.isLikelyIcelandic(text)) return;
+            if (text.length < 2 || !TI.ice.isLikelyIcelandic(text)) { TI.ui.hideSelectionButton(); return; }
             const rect = sel.getRangeAt(0).getBoundingClientRect();
-            if (/\s/.test(text)) lookupPhrase(text, rect);
-            else lookupWord(text, rect);
-        }, 20);
+            const multi = /\s/.test(text);
+            TI.ui.showSelectionButton(() => { if (multi) lookupPhrase(text, rect); else lookupWord(text, rect); });
+        }, 30);
     }
 
     function setEnabled(on) {
@@ -184,15 +236,17 @@
         tapEnabled = on;
         if (on) {
             document.addEventListener("click", onClick, true);
-            document.addEventListener("mouseup", onSelectionEnd, true);
-            document.addEventListener("touchend", onSelectionEnd, true);
         } else {
             document.removeEventListener("click", onClick, true);
-            document.removeEventListener("mouseup", onSelectionEnd, true);
-            document.removeEventListener("touchend", onSelectionEnd, true);
+            clearArmed();
             TI.ui.hide();
         }
     }
+
+    // Selection handling is always active — independent of the tap toggle.
+    document.addEventListener("mouseup", onSelectionEnd, true);
+    document.addEventListener("touchend", onSelectionEnd, true);
+    document.addEventListener("selectionchange", onSelectionEnd); // catches iOS handle drags
 
     TI.word = { setEnabled, get enabled() { return tapEnabled; } };
 })();

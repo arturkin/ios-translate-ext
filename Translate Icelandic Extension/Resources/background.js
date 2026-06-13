@@ -101,14 +101,18 @@ function handle(msg) {
     switch (msg.type) {
         case "translate":
             return doTranslate(msg.payload);
-        case "define":
-            return cached(defCache, msg.payload.word,
-                () => native({ type: "define", payload: msg.payload }),
+        case "define": {
+            const word = (msg.payload && msg.payload.word) || "";
+            return cached(defCache, word,
+                () => native({ type: "define", payload: { word } }),
                 (r) => Array.isArray(r.entries) && r.entries.length > 0);
-        case "inflect":
-            return cached(inflCache, msg.payload.word,
-                () => native({ type: "inflect", payload: msg.payload }),
+        }
+        case "inflect": {
+            const word = (msg.payload && msg.payload.word) || "";
+            return cached(inflCache, word,
+                () => native({ type: "inflect", payload: { word } }),
                 (r) => Array.isArray(r.forms) && r.forms.length > 0);
+        }
         case "status":
             return native({ type: "status", payload: {} });
         default:
@@ -118,5 +122,11 @@ function handle(msg) {
 
 browser.runtime.onMessage.addListener((msg) => {
     if (!msg || !msg.type) return; // not one of ours
-    return handle(msg).catch((e) => ({ ok: false, error: e.message }));
+    // Promise.resolve so a synchronous throw in handle() still becomes a rejected
+    // response instead of hanging the caller until its timeout.
+    try {
+        return Promise.resolve(handle(msg)).catch((e) => ({ ok: false, error: e.message }));
+    } catch (e) {
+        return Promise.resolve({ ok: false, error: e.message });
+    }
 });
