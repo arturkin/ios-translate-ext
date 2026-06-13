@@ -59,26 +59,20 @@
         @keyframes ti-spin { to { transform: rotate(360deg); } }
         .fab {
             position: fixed; right: 16px; bottom: 10px; z-index: 2147483646;
-            display: flex; align-items: center; justify-content: center;
-            width: 48px; height: 48px; padding: 0;
-            font-size: 22px; line-height: 1;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            height: 48px; min-width: 48px; padding: 0;
+            font: 600 14px/1 -apple-system, system-ui, sans-serif;
             color: #fff; background: #007aff; border: none;
-            border-radius: 50%; cursor: pointer;
+            border-radius: 24px; cursor: pointer;
             box-shadow: 0 4px 16px rgba(0,0,0,.3);
             -webkit-tap-highlight-color: transparent;
             transition: background .15s ease;
         }
         .fab.on { background: #34c759; }
-        .selbtn {
-            position: fixed; right: 16px; bottom: 70px; z-index: 2147483646;
-            display: flex; align-items: center; gap: 7px;
-            font: 600 14px/1 -apple-system, system-ui, sans-serif;
-            color: #fff; background: #007aff; border: none;
-            padding: 11px 15px; border-radius: 22px; cursor: pointer;
-            box-shadow: 0 4px 16px rgba(0,0,0,.3);
-            -webkit-tap-highlight-color: transparent;
-        }
-        .selbtn-ic { font-size: 15px; }
+        .fab .fab-ic { font-size: 22px; line-height: 1; }
+        .fab.labeled { padding: 0 16px; }       /* selection mode: expand into a pill */
+        .fab.labeled .fab-ic { font-size: 16px; }
+        .fab .fab-tx { font-size: 14px; white-space: nowrap; }
         .toast {
             position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
             z-index: 2147483647; max-width: 80vw;
@@ -98,8 +92,7 @@
     `;
 
     let host, shadow, card, body, visible = false, gen = 0;
-    let fab = null, fabState = false, fabOnToggle = null;
-    let selBtn = null, selOnTap = null;
+    let fab = null, fabState = false, fabBase = false, fabSel = null, fabOnToggle = null;
 
     function ensure() {
         if (host) return;
@@ -136,18 +129,16 @@
 
     // Hide when the underlying page scrolls, but NOT when the user scrolls inside
     // our own popover — in that case the event path runs through our host/card.
-    function selShown() { return !!selBtn && selBtn.style.display !== "none"; }
-
     function onScroll(e) {
-        if (!visible && !selShown()) return;   // nothing on screen → cheap exit
+        if (!visible && !fabSel) return;       // nothing transient on screen → cheap exit
         if (ownsEvent(e)) return;
         hide();
-        hideSelectionButton();
+        clearSelection();
     }
 
     function onResize() {
         hide();
-        hideSelectionButton();
+        clearSelection();
     }
 
     function place(rect) {
@@ -166,7 +157,7 @@
     // element to fill plus a reposition() to call after async content loads.
     function open(rect) {
         ensure();
-        hideSelectionButton();
+        clearSelection();
         const myGen = ++gen; // invalidate late callbacks from a previous lookup
         card.innerHTML = "";
         card.style.display = "flex";
@@ -200,78 +191,101 @@
         visible = false;
     }
 
-    // --- Floating "Translate page" button -------------------------------------
+    // --- Floating button -------------------------------------------------------
+    // One control: the page-translate button normally, expanding into a
+    // "Translate selection" pill while Icelandic text is selected.
+
+    function ensureFabEl() {
+        if (fab) return;
+        fab = document.createElement("button");
+        fab.className = "fab";
+        fab.type = "button";
+        // In selection mode, keep the page selection alive when the button is
+        // pressed — a tap outside the selection would otherwise collapse it before
+        // the click handler reads it.
+        fab.addEventListener("pointerdown", (e) => {
+            if (fabSel) { e.preventDefault(); e.stopPropagation(); }
+        }, true);
+        fab.addEventListener("click", onFabClick);
+        shadow.appendChild(fab);
+    }
+
+    function onFabClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (fabSel) {
+            const cb = fabSel;
+            clearSelection();          // back to the page-translate button
+            if (cb) cb();
+            return;
+        }
+        fabState = !fabState;
+        renderFab();
+        if (fabOnToggle) fabOnToggle(fabState);
+    }
 
     function renderFab() {
         if (!fab) return;
-        fab.classList.toggle("on", fabState);
+        fab.innerHTML = "";
+        const ic = document.createElement("span");
+        ic.className = "fab-ic";
+        if (fabSel) {
+            fab.classList.add("labeled");
+            fab.classList.remove("on");
+            ic.textContent = "🇮🇸";
+            const tx = document.createElement("span");
+            tx.className = "fab-tx";
+            tx.textContent = "Translate selection";
+            fab.appendChild(ic);
+            fab.appendChild(tx);
+            fab.setAttribute("aria-label", "Translate selection");
+            fab.title = "Translate selection";
+        } else {
+            fab.classList.remove("labeled");
+            fab.classList.toggle("on", fabState);
+            ic.textContent = fabState ? "↩" : "🇮🇸"; // ↩ : 🇮🇸
+            fab.appendChild(ic);
+            const label = fabState ? "Show original" : "Translate page";
+            fab.setAttribute("aria-label", label);
+            fab.title = label;
+        }
         fab.setAttribute("aria-pressed", String(fabState));
-        const label = fabState ? "Show original" : "Translate page";
-        fab.setAttribute("aria-label", label);
-        fab.title = label;
-        fab.textContent = fabState ? "↩" : "🇮🇸"; // ↩ : 🇮🇸
     }
 
-    // Show the floating button. `onToggle(on)` fires on each tap with the new state.
+    // Display the button when the page is translatable OR a selection is pending.
+    function refreshFab() {
+        ensureFabEl();
+        const show = fabBase || !!fabSel;
+        fab.style.display = show ? "flex" : "none";
+        if (show) renderFab();
+    }
+
+    // Show the page-translate button. `onToggle(on)` fires on each page tap.
     function showFab(onToggle) {
         ensure();
         fabOnToggle = onToggle;
-        if (!fab) {
-            fab = document.createElement("button");
-            fab.className = "fab";
-            fab.type = "button";
-            fab.addEventListener("click", (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                fabState = !fabState;
-                renderFab();
-                if (fabOnToggle) fabOnToggle(fabState);
-            });
-            shadow.appendChild(fab);
-        }
-        fab.style.display = "flex";
-        renderFab();
+        fabBase = true;
+        refreshFab();
     }
 
-    function setFabState(on) { fabState = !!on; renderFab(); }
-    function hideFab() { if (fab) fab.style.display = "none"; }
+    function hideFab() {
+        fabBase = false;
+        refreshFab();              // stays visible if a selection is pending
+    }
 
-    // --- Selection "Translate" chip -------------------------------------------
-    // A small button shown next to a text selection; tapping it runs `onTap`.
+    function setFabState(on) { fabState = !!on; refreshFab(); }
 
-    function showSelectionButton(onTap) {
+    // Enter "Translate selection" mode; `onTap` runs when the button is pressed.
+    function setSelection(onTap) {
         ensure();
-        selOnTap = onTap;
-        if (!selBtn) {
-            selBtn = document.createElement("button");
-            selBtn.className = "selbtn";
-            selBtn.type = "button";
-            // Keep the page selection alive when the chip is pressed.
-            selBtn.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); }, true);
-            selBtn.addEventListener("click", (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const cb = selOnTap;
-                hideSelectionButton();
-                if (cb) cb();
-            });
-            const ic = document.createElement("span");
-            ic.className = "selbtn-ic";
-            ic.textContent = "🇮🇸";
-            const tx = document.createElement("span");
-            tx.textContent = "Translate selection";
-            selBtn.appendChild(ic);
-            selBtn.appendChild(tx);
-            shadow.appendChild(selBtn);
-        }
-        // Pinned bottom-right, above the page button. The iOS selection callout
-        // hugs the selection (above or below it), so a fixed corner never collides.
-        selBtn.style.display = "flex";
+        fabSel = onTap || null;
+        refreshFab();
     }
 
-    function hideSelectionButton() {
-        selOnTap = null;
-        if (selBtn) selBtn.style.display = "none";
+    function clearSelection() {
+        if (!fabSel) return;
+        fabSel = null;
+        refreshFab();
     }
 
     function toast(message, kind) {
@@ -292,7 +306,7 @@
     TI.ui = {
         open, hide, toast, spinner, ownsEvent,
         showFab, hideFab, setFabState,
-        showSelectionButton, hideSelectionButton,
+        setSelection, clearSelection,
         get visible() { return visible; },
     };
 })();

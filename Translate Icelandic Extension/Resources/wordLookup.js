@@ -221,12 +221,12 @@
         selTimer = setTimeout(() => {
             if (TI.ui.visible) return;     // a lookup popover is already open
             const sel = window.getSelection();
-            if (!sel || sel.isCollapsed || !sel.rangeCount) { TI.ui.hideSelectionButton(); return; }
+            if (!sel || sel.isCollapsed || !sel.rangeCount) { TI.ui.clearSelection(); return; }
             const text = sel.toString().trim();
-            if (text.length < 2 || !TI.ice.isLikelyIcelandic(text)) { TI.ui.hideSelectionButton(); return; }
+            if (text.length < 2 || !TI.ice.isLikelyIcelandic(text)) { TI.ui.clearSelection(); return; }
             const rect = sel.getRangeAt(0).getBoundingClientRect();
             const multi = /\s/.test(text);
-            TI.ui.showSelectionButton(() => { if (multi) lookupPhrase(text, rect); else lookupWord(text, rect); });
+            TI.ui.setSelection(() => { if (multi) lookupPhrase(text, rect); else lookupWord(text, rect); });
         }, 30);
     }
 
