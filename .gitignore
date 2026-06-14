@@ -9,6 +9,7 @@ xcuserdata/
 
 # Build output
 build/
+build-mac/
 DerivedData/
 *.moved-aside
 *.hmap

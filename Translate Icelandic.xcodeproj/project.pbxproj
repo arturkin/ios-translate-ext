@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0BF3B6C62FDDCA6200DBAA17 /* Translate Icelandic Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0BF3B6C52FDDCA6200DBAA17 /* Translate Icelandic Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AAAA000000000000000000EC /* Translate Icelandic Extension (macOS).appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000E8 /* Translate Icelandic Extension (macOS).appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,6 +33,13 @@
 			remoteGlobalIDString = 0BF3B6C42FDDCA6200DBAA17;
 			remoteInfo = "Translate Icelandic Extension";
 		};
+		AAAA000000000000000000EA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0BF3B68A2FDDCA6000DBAA17 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AAAA000000000000000000E1;
+			remoteInfo = "Translate Icelandic Extension (macOS)";
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -46,6 +54,17 @@
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AAAA000000000000000000F8 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				AAAA000000000000000000EC /* Translate Icelandic Extension (macOS).appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -53,7 +72,9 @@
 		0BF3B6AF2FDDCA6100DBAA17 /* Translate IcelandicTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Translate IcelandicTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BF3B6B92FDDCA6100DBAA17 /* Translate IcelandicUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Translate IcelandicUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0BF3B6C52FDDCA6200DBAA17 /* Translate Icelandic Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Translate Icelandic Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
-		0BF3B6FA2FDDCA6200DBAA17 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Config/Secrets.xcconfig"; sourceTree = "<group>"; };
+		0BF3B6FA2FDDCA6200DBAA17 /* Config/Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config/Secrets.xcconfig; sourceTree = "<group>"; };
+		AAAA000000000000000000E8 /* Translate Icelandic Extension (macOS).appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Translate Icelandic Extension (macOS).appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		AAAA000000000000000000F9 /* Translate Icelandic (macOS).app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Translate Icelandic (macOS).app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -70,6 +91,13 @@
 				Info.plist,
 			);
 			target = 0BF3B6C42FDDCA6200DBAA17 /* Translate Icelandic Extension */;
+		};
+		AAAA000000000000000000E9 /* Exceptions for "Translate Icelandic Extension" folder in "Translate Icelandic Extension (macOS)" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = AAAA000000000000000000E1 /* Translate Icelandic Extension (macOS) */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -96,12 +124,18 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				0BF3B6E32FDDCA6200DBAA17 /* Exceptions for "Translate Icelandic Extension" folder in "Translate Icelandic Extension" target */,
+				AAAA000000000000000000E9 /* Exceptions for "Translate Icelandic Extension" folder in "Translate Icelandic Extension (macOS)" target */,
 			);
 			explicitFolders = (
 				Resources/_locales,
 				Resources/images,
 			);
 			path = "Translate Icelandic Extension";
+			sourceTree = "<group>";
+		};
+		AAAA000000000000000000FA /* Translate Icelandic macOS */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Translate Icelandic macOS";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -135,6 +169,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AAAA000000000000000000E6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AAAA000000000000000000F6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -145,7 +193,8 @@
 				0BF3B6B22FDDCA6100DBAA17 /* Translate IcelandicTests */,
 				0BF3B6BC2FDDCA6100DBAA17 /* Translate IcelandicUITests */,
 				0BF3B6C92FDDCA6200DBAA17 /* Translate Icelandic Extension */,
-				0BF3B6FA2FDDCA6200DBAA17 /* Secrets.xcconfig */,
+				AAAA000000000000000000FA /* Translate Icelandic macOS */,
+				0BF3B6FA2FDDCA6200DBAA17 /* Config/Secrets.xcconfig */,
 				0BF3B6932FDDCA6000DBAA17 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -157,6 +206,8 @@
 				0BF3B6AF2FDDCA6100DBAA17 /* Translate IcelandicTests.xctest */,
 				0BF3B6B92FDDCA6100DBAA17 /* Translate IcelandicUITests.xctest */,
 				0BF3B6C52FDDCA6200DBAA17 /* Translate Icelandic Extension.appex */,
+				AAAA000000000000000000F9 /* Translate Icelandic (macOS).app */,
+				AAAA000000000000000000E8 /* Translate Icelandic Extension (macOS).appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -256,6 +307,52 @@
 			productReference = 0BF3B6C52FDDCA6200DBAA17 /* Translate Icelandic Extension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		AAAA000000000000000000E1 /* Translate Icelandic Extension (macOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AAAA000000000000000000E2 /* Build configuration list for PBXNativeTarget "Translate Icelandic Extension (macOS)" */;
+			buildPhases = (
+				AAAA000000000000000000E5 /* Sources */,
+				AAAA000000000000000000E6 /* Frameworks */,
+				AAAA000000000000000000E7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				0BF3B6C92FDDCA6200DBAA17 /* Translate Icelandic Extension */,
+			);
+			name = "Translate Icelandic Extension (macOS)";
+			packageProductDependencies = (
+			);
+			productName = "Translate Icelandic Extension (macOS)";
+			productReference = AAAA000000000000000000E8 /* Translate Icelandic Extension (macOS).appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		AAAA000000000000000000F1 /* Translate Icelandic (macOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AAAA000000000000000000F2 /* Build configuration list for PBXNativeTarget "Translate Icelandic (macOS)" */;
+			buildPhases = (
+				AAAA000000000000000000F5 /* Sources */,
+				AAAA000000000000000000F6 /* Frameworks */,
+				AAAA000000000000000000F7 /* Resources */,
+				AAAA000000000000000000F8 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AAAA000000000000000000EB /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				AAAA000000000000000000FA /* Translate Icelandic macOS */,
+			);
+			name = "Translate Icelandic (macOS)";
+			packageProductDependencies = (
+			);
+			productName = "Translate Icelandic (macOS)";
+			productReference = AAAA000000000000000000F9 /* Translate Icelandic (macOS).app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -280,6 +377,12 @@
 					0BF3B6C42FDDCA6200DBAA17 = {
 						CreatedOnToolsVersion = 26.2;
 					};
+					AAAA000000000000000000E1 = {
+						CreatedOnToolsVersion = 26.2;
+					};
+					AAAA000000000000000000F1 = {
+						CreatedOnToolsVersion = 26.2;
+					};
 				};
 			};
 			buildConfigurationList = 0BF3B68D2FDDCA6000DBAA17 /* Build configuration list for PBXProject "Translate Icelandic" */;
@@ -300,6 +403,8 @@
 				0BF3B6AE2FDDCA6100DBAA17 /* Translate IcelandicTests */,
 				0BF3B6B82FDDCA6100DBAA17 /* Translate IcelandicUITests */,
 				0BF3B6C42FDDCA6200DBAA17 /* Translate Icelandic Extension */,
+				AAAA000000000000000000F1 /* Translate Icelandic (macOS) */,
+				AAAA000000000000000000E1 /* Translate Icelandic Extension (macOS) */,
 			);
 		};
 /* End PBXProject section */
@@ -327,6 +432,20 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		0BF3B6C32FDDCA6200DBAA17 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AAAA000000000000000000E7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AAAA000000000000000000F7 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -364,6 +483,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AAAA000000000000000000E5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AAAA000000000000000000F5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -382,18 +515,23 @@
 			target = 0BF3B6C42FDDCA6200DBAA17 /* Translate Icelandic Extension */;
 			targetProxy = 0BF3B6C72FDDCA6200DBAA17 /* PBXContainerItemProxy */;
 		};
+		AAAA000000000000000000EB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AAAA000000000000000000E1 /* Translate Icelandic Extension (macOS) */;
+			targetProxy = AAAA000000000000000000EA /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		0BF3B6E12FDDCA6200DBAA17 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 0BF3B6FA2FDDCA6200DBAA17 /* Secrets.xcconfig */;
+			baseConfigurationReference = 0BF3B6FA2FDDCA6200DBAA17 /* Config/Secrets.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "Translate Icelandic Extension/TranslateIcelandicExtension.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = P738AB4T7V;
 				GENERATE_INFOPLIST_FILE = YES;
-				CODE_SIGN_ENTITLEMENTS = "Translate Icelandic Extension/TranslateIcelandicExtension.entitlements";
 				INFOPLIST_FILE = "Translate Icelandic Extension/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Translate Icelandic Extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -422,13 +560,13 @@
 		};
 		0BF3B6E22FDDCA6200DBAA17 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 0BF3B6FA2FDDCA6200DBAA17 /* Secrets.xcconfig */;
+			baseConfigurationReference = 0BF3B6FA2FDDCA6200DBAA17 /* Config/Secrets.xcconfig */;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "Translate Icelandic Extension/TranslateIcelandicExtension.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = P738AB4T7V;
 				GENERATE_INFOPLIST_FILE = YES;
-				CODE_SIGN_ENTITLEMENTS = "Translate Icelandic Extension/TranslateIcelandicExtension.entitlements";
 				INFOPLIST_FILE = "Translate Icelandic Extension/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Translate Icelandic Extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -460,11 +598,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "Translate Icelandic/TranslateIcelandic.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = P738AB4T7V;
 				GENERATE_INFOPLIST_FILE = YES;
-				CODE_SIGN_ENTITLEMENTS = "Translate Icelandic/TranslateIcelandic.entitlements";
 				INFOPLIST_FILE = "Translate Icelandic/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Translate Icelandic";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -500,11 +638,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "Translate Icelandic/TranslateIcelandic.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = P738AB4T7V;
 				GENERATE_INFOPLIST_FILE = YES;
-				CODE_SIGN_ENTITLEMENTS = "Translate Icelandic/TranslateIcelandic.entitlements";
 				INFOPLIST_FILE = "Translate Icelandic/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Translate Icelandic";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -740,6 +878,110 @@
 			};
 			name = Release;
 		};
+		AAAA000000000000000000E3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0BF3B6FA2FDDCA6200DBAA17 /* Config/Secrets.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "Translate Icelandic Extension/TranslateIcelandicExtensionMac.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P738AB4T7V;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Translate Icelandic Extension/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Translate Icelandic Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "arturkin.Translate-Icelandic.mac.Extension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		AAAA000000000000000000E4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0BF3B6FA2FDDCA6200DBAA17 /* Config/Secrets.xcconfig */;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "Translate Icelandic Extension/TranslateIcelandicExtensionMac.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P738AB4T7V;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Translate Icelandic Extension/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Translate Icelandic Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "arturkin.Translate-Icelandic.mac.Extension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		AAAA000000000000000000F3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "Translate Icelandic macOS/TranslateIcelandicMac.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P738AB4T7V;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Translate Icelandic";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "arturkin.Translate-Icelandic.mac";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		AAAA000000000000000000F4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "Translate Icelandic macOS/TranslateIcelandicMac.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P738AB4T7V;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Translate Icelandic";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "arturkin.Translate-Icelandic.mac";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -784,6 +1026,24 @@
 			buildConfigurations = (
 				0BF3B6EE2FDDCA6200DBAA17 /* Debug */,
 				0BF3B6EF2FDDCA6200DBAA17 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AAAA000000000000000000E2 /* Build configuration list for PBXNativeTarget "Translate Icelandic Extension (macOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AAAA000000000000000000E3 /* Debug */,
+				AAAA000000000000000000E4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AAAA000000000000000000F2 /* Build configuration list for PBXNativeTarget "Translate Icelandic (macOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AAAA000000000000000000F3 /* Debug */,
+				AAAA000000000000000000F4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
