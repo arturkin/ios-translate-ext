@@ -34,6 +34,18 @@ Translate Icelandic Extension/
     background.js                        Service worker: router + cache + native bridge
     popup.html/js/css                    Toolbar quick toggles + backend status
     images/  _locales/                   Folder references (preserved verbatim)
+
+chrome/                                  Desktop-Chrome build (Chromium: Edge/Brave/Opera too)
+  src/manifest.json                      MV3; service_worker + host_permissions (no nativeMessaging)
+  src/background.js                      Service worker: SAME router/cache as Safari; native() seam
+                                           replaced by direct fetch() to the services below
+  src/services/azure.js mymemory.js wiktionary.js inflection.js   JS ports of the Swift services
+  src/services/settings.js               Baked-config + defaults → status response
+  src/package.json                       {"type":"module"} for Node tooling only (not shipped)
+  config.example.js                      Tracked template; copy to config.local.js (gitignored)
+  vendor/browser-polyfill.min.js         Mozilla webextension-polyfill (MPL-2.0), vendored
+  dist/                                  Build output (gitignored) — load this unpacked
+scripts/build-chrome.mjs                 Assembles chrome/dist/ from Resources/ + chrome/src/
 ```
 
 ## How it fits together
@@ -53,6 +65,30 @@ Translate Icelandic Extension/
   - On failure: `{ ok: false, error }` (JS rejects).
 - **Caching** lives in `background.js`: translations are cached in `storage.local` (keyed by
   `from\nto\ntext`, capped, persisted); define/inflect are cached in memory per word.
+
+## Chrome build (the seam)
+
+- **`background.js` is the only platform-specific file.** Content scripts, popup, detector, UI,
+  `_locales`, icons, the message protocol, and the cache logic are **shared verbatim** with Safari —
+  single-source in `Translate Icelandic Extension/Resources/`. The Chrome `background.js` is a
+  structural copy of the Safari one with the `native()` seam (`sendNativeMessage` → Swift) swapped
+  for direct `fetch()` to `chrome/src/services/*.js` (ports of the Swift services). Service workers
+  may fetch cross-origin via `host_permissions` — no CORS, no native app.
+- **Don't fork the content scripts.** Edit them in `Resources/` and rebuild; `scripts/build-chrome.mjs`
+  copies them into `chrome/dist/`. The only build-time transform is injecting the polyfill `<script>`
+  into `popup.html`.
+- **`webextension-polyfill` is required**, not cosmetic: Chrome exposes `chrome.*` (not `browser.*`)
+  and — unlike Safari — a Chrome `onMessage` listener that *returns a Promise* does **not** reply.
+  The polyfill provides `browser.*` and the promise-returning-listener behaviour the shared code
+  depends on. It's loaded first in `content_scripts`, `import`ed at the top of the SW, and injected
+  into `popup.html` by the build.
+- **No native side ⇒ no SharedStore/App Group.** The key/region are **baked** from
+  `chrome/config.local.js` (gitignored; mirrors `Config/Secrets.xcconfig`) into `chrome/dist/config.js`
+  at build time; feature toggles use `SharedStore`'s defaults in `services/settings.js`. No key →
+  MyMemory fallback. There is **no options/settings UI** in Chrome (popup per-session toggles only).
+- **`User-Agent` can't be set from `fetch()`** (forbidden header); the Swift services' descriptive UA
+  is dropped — the browser's own UA satisfies Wiktionary/ylhyra.
+- **Action icon must be PNG** in Chrome (`images/icon-*.png`), not Safari's `toolbar-icon.svg`.
 
 ## Conventions & gotchas
 
@@ -103,6 +139,9 @@ Translate Icelandic Extension/
 ./scripts/qa.sh
 ./scripts/qa.sh --fast    # quick checks only (skip Xcode build/tests)
 
+# Chrome build (desktop) — assembles chrome/dist/, then Load unpacked in chrome://extensions
+node scripts/build-chrome.mjs
+
 # Or directly:
 # Compile app + extension for the simulator (no signing)
 xcodebuild -scheme "Translate Icelandic" -sdk iphonesimulator \
@@ -114,9 +153,11 @@ xcodebuild -scheme "Translate Icelandic" -sdk iphonesimulator \
   -only-testing:"Translate IcelandicTests" test
 ```
 
-QA harness: `scripts/qa.sh` (+ `scripts/qa/check_js.mjs`, `check_apis.py`). On-device checklist:
-[`docs/QA.md`](docs/QA.md). The harness validates the Icelandic detector, JS syntax, config
-validity, the live external-API contracts, the build, and unit tests without a device.
+QA harness: `scripts/qa.sh` (+ `scripts/qa/check_js.mjs`, `check_chrome.mjs`, `check_apis.py`).
+On-device checklist: [`docs/QA.md`](docs/QA.md). The harness validates the Icelandic detector, JS
+syntax, the Chrome build + MV3 manifest (`check_chrome.mjs`: builds `chrome/dist/`, checks
+`host_permissions` and that every referenced file resolves), config validity, the live external-API
+contracts, the build, and unit tests without a device.
 
 ## External APIs
 

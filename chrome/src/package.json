@@ -1,0 +1,5 @@
+{
+    "private": true,
+    "type": "module",
+    "//": "Not shipped to Chrome (it loads the SW/services as ESM via manifest 'type: module'). This only tells Node tooling — e.g. `node --check` in the QA harness — to parse the .js files here as ES modules."
+}

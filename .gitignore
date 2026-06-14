@@ -10,6 +10,7 @@ xcuserdata/
 # Build output
 build/
 build-mac/
+chrome/dist/
 DerivedData/
 *.moved-aside
 *.hmap
@@ -26,3 +27,5 @@ DerivedData/
 Config/Secrets.xcconfig
 *.local.xcconfig
 secrets.xcconfig
+# Chrome: baked key lives here (gitignored); only chrome/config.example.js is tracked.
+chrome/config.local.js

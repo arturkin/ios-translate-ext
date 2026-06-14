@@ -27,6 +27,13 @@ else
   echo "  node not found — skipping (install Node to run JS checks)"
 fi
 
+hr "1b. Chrome build + manifest"
+if command -v node >/dev/null 2>&1; then
+  node "scripts/qa/check_chrome.mjs" || FAIL=1
+else
+  echo "  node not found — skipping (install Node to build/validate the Chrome extension)"
+fi
+
 hr "2. Config validity (plists, entitlements, JSON)"
 CFG_OK=1
 for p in "Translate Icelandic/Info.plist" \

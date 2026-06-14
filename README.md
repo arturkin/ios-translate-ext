@@ -1,10 +1,11 @@
 # Translate Icelandic
 
-A **Safari Web Extension for iOS 18+** that translates **Icelandic → English** on any website,
-and lets you **tap a word to look it up** (gloss + dictionary definition + full inflection table)
-while you learn the language.
+A **Safari Web Extension (iOS 18+ and macOS)** — with a **desktop Chrome build** too — that
+translates **Icelandic → English** on any website, and lets you **tap a word to look it up**
+(gloss + dictionary definition + full inflection table) while you learn the language.
 
-> Distributed through the App Store by **invite only** — see [Releasing](#releasing).
+> Safari is distributed through the App Store by **invite only** — see [Releasing](#releasing).
+> The Chrome build is loaded unpacked — see [Chrome (desktop)](#chrome-desktop).
 
 ## Features
 
@@ -142,12 +143,51 @@ Translations are cached on-device, so re-reading a page or revisiting words does
 - **A lookup or page-translate shows an error** → the translation/dictionary service timed out or
   rejected the request. For Azure, an `HTTP 401`/`403` means the key or region is wrong.
 
+## Chrome (desktop)
+
+The same extension runs in desktop **Chrome** (and Chromium browsers — Edge, Brave, Opera). It
+reuses the identical content scripts, popup, Icelandic detector and Shadow-DOM UI; only the backend
+differs. Chrome has no native app, so the background **service worker** calls the translation and
+dictionary APIs directly with `fetch()` (cross-origin is allowed via `host_permissions`). Mozilla's
+`webextension-polyfill` provides the `browser.*` API, so the shared code runs unchanged.
+
+> **iOS/Android Chrome can't run extensions** — Chrome on mobile has no extension support at all.
+> On iOS the only route to extensions is a Safari Web Extension (above). The Chrome build is
+> desktop-only.
+
+### Build & load
+
+```sh
+# Optional: bake in your Azure key (gitignored, mirrors Config/Secrets.xcconfig).
+cp chrome/config.example.js chrome/config.local.js
+#   then edit chrome/config.local.js → azureKey / azureRegion
+#   (skip this to use the keyless MyMemory fallback)
+
+node scripts/build-chrome.mjs        # assembles chrome/dist/
+```
+
+Then in Chrome: open **`chrome://extensions`** → enable **Developer mode** (top-right) → **Load
+unpacked** → select the **`chrome/dist`** folder. Pin it from the puzzle-piece menu. After editing
+any source, re-run the build and hit **Reload** on the extension card.
+
+> Same caveat as the Safari build: a baked key ships inside `chrome/dist` and shares one Azure F0
+> quota. `chrome/dist/` and `chrome/config.local.js` are gitignored — never commit them.
+
+### How the desktop build is assembled
+
+Content scripts stay single-source in `Translate Icelandic Extension/Resources/`;
+`scripts/build-chrome.mjs` copies them into `chrome/dist/` alongside the Chrome-only files in
+`chrome/src/` (the MV3 manifest, the `background.js` service worker, and the JS ports of the four
+services in `chrome/src/services/`). Edit a content script once and both platforms pick it up.
+
 ## Swapping the translation backend
 
 The backend is a single seam: implement `TranslationProvider` and wire it into
 `MessageRouter.translate(_:)`. See
 `Translate Icelandic Extension/Services/AzureTranslationProvider.swift` for the reference
-implementation and `FallbackTranslationProvider.swift` for the keyless option.
+implementation and `FallbackTranslationProvider.swift` for the keyless option. The Chrome build
+mirrors this seam in JavaScript — `chrome/src/services/*.js` ported 1:1 from the Swift services,
+dispatched in `chrome/src/background.js`.
 
 ## Testing
 
@@ -158,8 +198,10 @@ AZURE_TRANSLATOR_KEY=… AZURE_TRANSLATOR_REGION=… ./scripts/qa.sh   # also ex
 ```
 
 The harness validates everything that doesn't need a device — the Icelandic detector, JS syntax,
-plist/entitlement/JSON validity, the live external-API contracts (MyMemory, Wiktionary, BÍN), the
-build, and the unit tests. Run it before every release. Then do the on-device pass in
+the **Chrome build + manifest** (`scripts/qa/check_chrome.mjs` assembles `chrome/dist/` and checks
+the MV3 manifest, `host_permissions`, and that every referenced file resolves), plist/entitlement/
+JSON validity, the live external-API contracts (MyMemory, Wiktionary, BÍN), the build, and the unit
+tests. Run it before every release. Then do the on-device pass in
 [`docs/QA.md`](docs/QA.md) (Safari rendering, tap gestures, Facebook's feed) — the parts a harness
 can't cover.
 
