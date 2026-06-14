@@ -205,6 +205,9 @@ tests. Run it before every release. Then do the on-device pass in
 [`docs/QA.md`](docs/QA.md) (Safari rendering, tap gestures, Facebook's feed) — the parts a harness
 can't cover.
 
+To pick the project back up and make changes — where to edit, per-platform build/run/debug loops,
+and common change recipes — see [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
+
 ## Releasing
 
 The app is distributed **by invite only** — there's no public, searchable App Store listing. Two

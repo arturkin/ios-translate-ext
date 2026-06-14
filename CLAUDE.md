@@ -159,6 +159,9 @@ syntax, the Chrome build + MV3 manifest (`check_chrome.mjs`: builds `chrome/dist
 `host_permissions` and that every referenced file resolves), config validity, the live external-API
 contracts, the build, and unit tests without a device.
 
+**Iterating on the app** (where to edit, per-platform build/run/debug loops, change recipes):
+[`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
+
 ## External APIs
 
 - **Azure Translator** v3 `POST /translate?api-version=3.0&from=is&to=en` — headers
