@@ -75,8 +75,14 @@ Translate Icelandic Extension/
 - **Icelandic detection** (`icelandic.js`) is a heuristic to skip English and save quota
   (þ/ð/æ are strong signals; plus stopwords + accents). The API still does authoritative
   detection. Tune the word list there, not elsewhere.
-- **Tap mode** intercepts plain-text taps only; taps on links/buttons/inputs pass through. It's
-  off-limits to hijack navigation.
+- **Look-up mode** triggers on a **long-press (~350ms hold)** on a word, not a tap — quick taps
+  pass straight through to the page, so it never hijacks normal taps/navigation (works on
+  over-clickable layouts like Facebook). A finger move >10px cancels (scroll/drag). On fire it
+  suppresses the native callout (`selectstart`/`contextmenu`) and the synthesized click, and while
+  active it force-enables `user-select` + stops page `selectstart` handlers so drag-selection works
+  where sites block it. It is **auto-enabled only on likely-Icelandic pages** (gated in `content.js`
+  via `looksIcelandic()`), so it stays dormant on English sites; the popup toggle can force it on
+  any page. All its listeners are added/removed together in `TI.word.setEnabled`.
 - After editing Swift, check LSP diagnostics; prefer LSP navigation over grep for code.
 
 ## Build & test

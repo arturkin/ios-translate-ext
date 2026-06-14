@@ -27,12 +27,19 @@ changes**, they're temporary):
    - If signing says the bundle ID is unavailable, change both IDs to something
      unique, e.g. `arturkin.test.Translate-Icelandic` and
      `arturkin.test.Translate-Icelandic.Extension`.
-3. Set the run destination to your iPhone → **Run**.
-4. On the iPhone: *Settings → General → VPN & Device Management* → trust your
-   developer certificate.
-5. Enable the extension: *Settings → Apps → Safari → Extensions → Translate
+3. Pick the **scheme** "Translate Icelandic" (not the Tests targets), then in the
+   destination menu (top toolbar) choose your iPhone under *iOS Device*. If it's
+   greyed out, wait for Xcode's "Preparing iPhone for Development…" to finish, and
+   make sure the phone is unlocked and on iOS 18+.
+4. Press **▶ Run** (⌘R). Xcode builds, installs, and tries to launch — the first
+   launch **fails** with "Untrusted Developer". That's expected and is what creates
+   the trust entry.
+5. **Now** trust it (the entry only appears *after* that first install):
+   *Settings → General → VPN & Device Management → DEVELOPER APP →* your Apple ID
+   *→ Trust*. Then tap the app icon on the Home Screen to launch it.
+6. Enable the extension: *Settings → Apps → Safari → Extensions → Translate
    Icelandic* → on → **Allow on Every Website**.
-6. Re-run from Xcode within 7 days when the build expires.
+7. Re-run from Xcode within 7 days when the build expires.
 
 To revert for real distribution: re-add App Groups, restore the original bundle IDs,
 set the team back to `P738AB4T7V` (or `git checkout` the project file if you edited

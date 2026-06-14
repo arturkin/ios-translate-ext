@@ -49,6 +49,17 @@
     }
 
     const isTop = window.top === window;
+    let tapSetting = true, autoSetting = false;
+
+    // Turn look-up + the floating button on ONLY for (likely) Icelandic pages, so the
+    // extension stays dormant on English sites like google.com. The popup toggles can
+    // still force it on for any page.
+    function activateForLanguage() {
+        if (!looksIcelandic() && !TI.page.active) return;
+        if (tapSetting) TI.word.setEnabled(true);
+        if (autoSetting) TI.page.enable();
+        if (isTop) maybeShowFab();
+    }
 
     (async () => {
         let s = {};
@@ -59,12 +70,10 @@
             useWiktionary: s.useWiktionary !== false,
             useBin: s.useBin !== false,
         };
-        if (s.tapToTranslate !== false) TI.word.setEnabled(true); // default ON
-        if (s.autoTranslate === true) TI.page.enable();
-        if (isTop) {
-            maybeShowFab();
-            setTimeout(maybeShowFab, 1800); // SPA / lazy content settle
-        }
+        tapSetting = s.tapToTranslate !== false;
+        autoSetting = s.autoTranslate === true;
+        activateForLanguage();
+        setTimeout(activateForLanguage, 1800); // SPA / lazy content settle
     })();
 
     // Messages from the popup. Always answer with the current page state so the

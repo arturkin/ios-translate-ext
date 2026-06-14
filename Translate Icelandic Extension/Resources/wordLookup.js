@@ -12,8 +12,14 @@
     const TI = (window.__TI__ = window.__TI__ || {});
 
     let tapEnabled = false;
-    let armed = null;          // { word, rect, range } awaiting a confirming second tap
     let hlStyleAdded = false;
+
+    // Long-press gesture. A quick tap passes through to the page; holding ~PRESS_MS
+    // in place triggers a look-up — so we never hijack normal taps or navigation.
+    const PRESS_MS = 350;      // hold time to trigger (under iOS's ~500ms selection)
+    const MOVE_TOL = 10;       // px of movement that turns a press into a scroll/drag
+    let pressTimer = null, pressX = 0, pressY = 0;
+    let pressActive = false, pressFired = false, suppressNative = false;
 
     function mk(tag, cls, text) {
         const el = document.createElement(tag);
@@ -175,42 +181,78 @@
         hlStyleAdded = true;
     }
     function setArmed(hit) {
-        armed = hit;
         if (highlightSupported()) {
             ensureHighlightStyle();
             try { CSS.highlights.set("ti-armed", new Highlight(hit.range)); } catch (_) { /* ignore */ }
         }
     }
     function clearArmed() {
-        armed = null;
         if (highlightSupported()) { try { CSS.highlights.delete("ti-armed"); } catch (_) { /* ignore */ } }
     }
-    function sameHit(a, b) {
-        if (!a || !b || a.word !== b.word) return false;
-        // Compare by on-screen position, not node identity: dynamic pages (and our
-        // own page-translator) can replace the text node between the two taps.
-        return Math.abs(a.rect.left - b.rect.left) < 12 && Math.abs(a.rect.top - b.rect.top) < 12;
+    // We only skip editable fields (so holding to place a cursor still works). A hold
+    // anywhere else that lands on a real word triggers a look-up; a quick tap is left
+    // for the page to handle, so we never hijack normal taps/navigation.
+    const EDITABLE = 'input, textarea, select, [contenteditable=""], [contenteditable="true"]';
+
+    function cancelPress() {
+        pressActive = false;
+        if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
     }
 
-    const INTERACTIVE = 'a, button, input, textarea, select, [role="button"], [contenteditable=""], [contenteditable="true"]';
-
-    function onClick(e) {
+    function onPointerDown(e) {
         if (!tapEnabled) return;
-        if (TI.ui.ownsEvent && TI.ui.ownsEvent(e)) return; // taps on our own UI
-        const sel = window.getSelection();
-        if (sel && !sel.isCollapsed) return;               // selection chip owns this
-        if (e.target.closest && e.target.closest(INTERACTIVE)) return;
+        if (e.pointerType === "mouse" && e.button !== 0) return;
+        cancelPress();
+        clearArmed();
+        if (TI.ui.ownsEvent && TI.ui.ownsEvent(e)) return;       // our own UI
+        if (e.target.closest && e.target.closest(EDITABLE)) return;
         const hit = caretWord(e.clientX, e.clientY);
-        if (!hit || !hit.word) { clearArmed(); return; }
+        if (!hit || !hit.word) return;                           // no word under the point
+        pressX = e.clientX; pressY = e.clientY;
+        pressActive = true; pressFired = false;
+        pressTimer = setTimeout(firePress, PRESS_MS);
+    }
+
+    function firePress() {
+        pressTimer = null;
+        if (!pressActive) return;
+        const hit = caretWord(pressX, pressY);
+        if (!hit || !hit.word) return;                           // word vanished — let the OS handle it
+        pressFired = true;
+        suppressNative = true;                                   // block the native callout/selection
+        setArmed(hit);                                           // highlight the held word
+        lookupWord(hit.word, hit.rect);
+    }
+
+    function onPointerMove(e) {
+        if (!pressActive || pressFired) return;
+        if (Math.abs(e.clientX - pressX) > MOVE_TOL || Math.abs(e.clientY - pressY) > MOVE_TOL) {
+            cancelPress();                                       // became a scroll / selection drag
+        }
+    }
+
+    function onPointerUp(e) {
+        if (pressFired) {                                        // swallow the tap that ends the hold
+            e.preventDefault();
+            e.stopPropagation();
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+            setTimeout(() => { pressFired = false; suppressNative = false; }, 400);
+        } else {
+            suppressNative = false;
+        }
+        cancelPress();
+    }
+
+    // After a fired hold, eat the click/contextmenu the OS still synthesizes so the
+    // page (e.g. Facebook) doesn't also act on it.
+    function onClickSuppress(e) {
+        if (!pressFired) return;
         e.preventDefault();
         e.stopPropagation();
-        if (sameHit(armed, hit)) {
-            const word = hit.word, rect = hit.rect;        // confirmed: second tap
-            clearArmed();
-            lookupWord(word, rect);
-        } else {
-            setArmed(hit);                                 // first tap: highlight only
-        }
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+    }
+    function onContextMenu(e) {
+        if (suppressNative) { e.preventDefault(); e.stopPropagation(); }
     }
 
     // --- selection "Translate" chip (works with tap mode on or off) -----------
@@ -230,23 +272,64 @@
         }, 30);
     }
 
+    // Enable/disable the whole look-up feature. Gated ON only for Icelandic pages
+    // (by content.js) or when the user forces it from the popup, so English sites
+    // like google.com stay untouched.
     function setEnabled(on) {
         on = !!on;
         if (on === tapEnabled) return;
         tapEnabled = on;
         if (on) {
-            document.addEventListener("click", onClick, true);
+            enableSelectability();
+            document.addEventListener("pointerdown", onPointerDown, true);
+            document.addEventListener("pointermove", onPointerMove, true);
+            document.addEventListener("pointerup", onPointerUp, true);
+            document.addEventListener("pointercancel", cancelPress, true);
+            document.addEventListener("click", onClickSuppress, true);
+            document.addEventListener("contextmenu", onContextMenu, true);
+            document.addEventListener("mouseup", onSelectionEnd, true);
+            document.addEventListener("touchend", onSelectionEnd, true);
+            document.addEventListener("selectionchange", onSelectionEnd);
         } else {
-            document.removeEventListener("click", onClick, true);
+            document.removeEventListener("pointerdown", onPointerDown, true);
+            document.removeEventListener("pointermove", onPointerMove, true);
+            document.removeEventListener("pointerup", onPointerUp, true);
+            document.removeEventListener("pointercancel", cancelPress, true);
+            document.removeEventListener("click", onClickSuppress, true);
+            document.removeEventListener("contextmenu", onContextMenu, true);
+            document.removeEventListener("mouseup", onSelectionEnd, true);
+            document.removeEventListener("touchend", onSelectionEnd, true);
+            document.removeEventListener("selectionchange", onSelectionEnd);
+            cancelPress();
             clearArmed();
+            disableSelectability();
+            TI.ui.clearSelection();
             TI.ui.hide();
         }
     }
 
-    // Selection handling is always active — independent of the tap toggle.
-    document.addEventListener("mouseup", onSelectionEnd, true);
-    document.addEventListener("touchend", onSelectionEnd, true);
-    document.addEventListener("selectionchange", onSelectionEnd); // catches iOS handle drags
+    // Counter pages that block text selection (Facebook): force user-select back on
+    // and neutralize their capture-phase `selectstart` handlers so a drag can start a
+    // selection. Also used to suppress the native selection our own long-press would
+    // trigger. Installed only while look-up mode is on, so English pages are untouched.
+    function onSelectStart(e) {
+        e.stopPropagation();                       // beat pages that cancel selection
+        if (suppressNative) e.preventDefault();    // but suppress the select our hold triggers
+    }
+    function enableSelectability() {
+        if (!document.getElementById("ti-selectable")) {
+            const st = document.createElement("style");
+            st.id = "ti-selectable";
+            st.textContent = "*:not(input):not(textarea){-webkit-user-select:text !important;user-select:text !important;}";
+            (document.head || document.documentElement).appendChild(st);
+        }
+        document.addEventListener("selectstart", onSelectStart, true);
+    }
+    function disableSelectability() {
+        const st = document.getElementById("ti-selectable");
+        if (st) st.remove();
+        document.removeEventListener("selectstart", onSelectStart, true);
+    }
 
     TI.word = { setEnabled, get enabled() { return tapEnabled; } };
 })();
