@@ -1,11 +1,11 @@
-// wordLookup.js — the learning feature: tap a word (two taps) for an instant
-// English gloss plus a deeper "Look Up" panel (Wiktionary definition + BÍN
-// inflection table), and a "Translate" chip on any text selection.
+// wordLookup.js — the learning feature: hold a word briefly then lift for an instant
+// English gloss plus a deeper "Look Up" panel (Wiktionary definition + BÍN inflection
+// table), and a "Translate" chip on any text selection.
 //
-// Tapping is gated behind a toggle so it never hijacks normal browsing. When the
-// toggle is on, the FIRST tap on a word highlights it and the SECOND tap on the
-// same word looks it up (and is swallowed); taps on links/buttons pass through.
-// The selection "Translate" chip works regardless of the tap toggle.
+// Gated behind a toggle so it never hijacks normal browsing. A quick tap passes
+// straight through; holding in place (~PRESS_MS) and lifting opens the look-up;
+// dragging selects text natively. We never block selection or open the popover
+// mid-gesture, so a drag is never fighting an already-open popover.
 
 (() => {
     "use strict";
@@ -14,12 +14,17 @@
     let tapEnabled = false;
     let hlStyleAdded = false;
 
-    // Long-press gesture. A quick tap passes through to the page; holding ~PRESS_MS
-    // in place triggers a look-up — so we never hijack normal taps or navigation.
-    const PRESS_MS = 350;      // hold time to trigger (under iOS's ~500ms selection)
-    const MOVE_TOL = 10;       // px of movement that turns a press into a scroll/drag
+    // Press-and-hold gesture, resolved on RELEASE. A quick tap passes through to the
+    // page; holding in place ~PRESS_MS then lifting opens the look-up; dragging selects
+    // text natively. We never open the popover or block selection mid-gesture, so iOS's
+    // own selection is never half-engaged and there is nothing to undo if you drag.
+    const PRESS_MS = 350;      // hold time before a release counts as a look-up, not a tap
+    const MOVE_TOL = 10;       // px of movement that turns a press into a scroll / selection drag
     let pressTimer = null, pressX = 0, pressY = 0;
-    let pressActive = false, pressFired = false, suppressNative = false;
+    let pressActive = false;       // finger is down on a word (a candidate gesture)
+    let heldLongEnough = false;    // held >= PRESS_MS without moving → release looks it up
+    let movedDuringPress = false;  // finger moved past MOVE_TOL → scroll / selection drag
+    let suppressSynthetic = false; // briefly eat the click/contextmenu the OS fires after a look-up
 
     function mk(tag, cls, text) {
         const el = document.createElement(tag);
@@ -209,59 +214,70 @@
         const hit = caretWord(e.clientX, e.clientY);
         if (!hit || !hit.word) return;                           // no word under the point
         pressX = e.clientX; pressY = e.clientY;
-        pressActive = true; pressFired = false;
-        pressTimer = setTimeout(firePress, PRESS_MS);
+        pressActive = true; heldLongEnough = false; movedDuringPress = false;
+        pressTimer = setTimeout(armHold, PRESS_MS);
     }
 
-    function firePress() {
+    // Held in place long enough: highlight the word so the user sees that lifting will
+    // look it up. We deliberately do NOT open the popover or touch the OS selection
+    // here — that is decided on release (onPointerUp), so a drag still selects natively.
+    function armHold() {
         pressTimer = null;
-        if (!pressActive) return;
+        if (!pressActive || movedDuringPress) return;
         const hit = caretWord(pressX, pressY);
         if (!hit || !hit.word) return;                           // word vanished — let the OS handle it
-        pressFired = true;
-        suppressNative = true;                                   // block the native callout/selection
-        setArmed(hit);                                           // highlight the held word
-        lookupWord(hit.word, hit.rect);
+        heldLongEnough = true;
+        setArmed(hit);
     }
 
     function onPointerMove(e) {
-        if (!pressActive || pressFired) return;
+        if (!pressActive || movedDuringPress) return;
         if (Math.abs(e.clientX - pressX) > MOVE_TOL || Math.abs(e.clientY - pressY) > MOVE_TOL) {
-            cancelPress();                                       // became a scroll / selection drag
+            movedDuringPress = true;                             // scroll / selection drag — not a look-up
+            clearArmed();
+            if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
         }
     }
 
     function onPointerUp(e) {
-        if (pressFired) {                                        // swallow the tap that ends the hold
-            e.preventDefault();
-            e.stopPropagation();
-            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-            setTimeout(() => { pressFired = false; suppressNative = false; }, 400);
-        } else {
-            suppressNative = false;
-        }
+        if (!pressActive) return;
+        const doLookup = heldLongEnough && !movedDuringPress;
         cancelPress();
+        if (!doLookup) return;                                   // tap / scroll / drag-select → leave it to the page + OS
+        const hit = caretWord(pressX, pressY);
+        if (!hit || !hit.word) return;
+        // A deliberate hold-and-release on a word: clear the OS's transient single-word
+        // selection (so its callout doesn't linger) and open our look-up instead.
+        try { const s = window.getSelection(); if (s) s.removeAllRanges(); } catch (_) { /* ignore */ }
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        suppressSynthetic = true;                               // eat the click/contextmenu the OS will synthesize
+        setTimeout(() => { suppressSynthetic = false; }, 500);
+        setArmed(hit);
+        lookupWord(hit.word, hit.rect);
     }
 
-    // After a fired hold, eat the click/contextmenu the OS still synthesizes so the
-    // page (e.g. Facebook) doesn't also act on it.
+    // After a hold-release look-up, eat the click/contextmenu the OS still synthesizes
+    // so the page (e.g. Facebook) doesn't also act on it.
     function onClickSuppress(e) {
-        if (!pressFired) return;
+        if (!suppressSynthetic) return;
         e.preventDefault();
         e.stopPropagation();
         if (e.stopImmediatePropagation) e.stopImmediatePropagation();
     }
     function onContextMenu(e) {
-        if (suppressNative) { e.preventDefault(); e.stopPropagation(); }
+        if (suppressSynthetic) { e.preventDefault(); e.stopPropagation(); }
     }
 
     // --- selection "Translate" chip (works with tap mode on or off) -----------
 
     let selTimer = null;
     function onSelectionEnd() {
+        if (pressActive) return;       // a press is mid-gesture — wait for onPointerUp to decide
         if (selTimer) clearTimeout(selTimer);
         selTimer = setTimeout(() => {
-            if (TI.ui.visible) return;     // a lookup popover is already open
+            if (TI.ui.visible) return; // a look-up popover is already open
             const sel = window.getSelection();
             if (!sel || sel.isCollapsed || !sel.rangeCount) { TI.ui.clearSelection(); return; }
             const text = sel.toString().trim();
@@ -310,11 +326,10 @@
 
     // Counter pages that block text selection (Facebook): force user-select back on
     // and neutralize their capture-phase `selectstart` handlers so a drag can start a
-    // selection. Also used to suppress the native selection our own long-press would
-    // trigger. Installed only while look-up mode is on, so English pages are untouched.
+    // selection. We never preventDefault here — the OS selection must run freely so
+    // drag-to-select works. Installed only while look-up mode is on.
     function onSelectStart(e) {
-        e.stopPropagation();                       // beat pages that cancel selection
-        if (suppressNative) e.preventDefault();    // but suppress the select our hold triggers
+        e.stopPropagation();   // beat pages (e.g. Facebook) that cancel text selection
     }
     function enableSelectability() {
         if (!document.getElementById("ti-selectable")) {

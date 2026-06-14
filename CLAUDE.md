@@ -75,14 +75,25 @@ Translate Icelandic Extension/
 - **Icelandic detection** (`icelandic.js`) is a heuristic to skip English and save quota
   (þ/ð/æ are strong signals; plus stopwords + accents). The API still does authoritative
   detection. Tune the word list there, not elsewhere.
-- **Look-up mode** triggers on a **long-press (~350ms hold)** on a word, not a tap — quick taps
-  pass straight through to the page, so it never hijacks normal taps/navigation (works on
-  over-clickable layouts like Facebook). A finger move >10px cancels (scroll/drag). On fire it
-  suppresses the native callout (`selectstart`/`contextmenu`) and the synthesized click, and while
-  active it force-enables `user-select` + stops page `selectstart` handlers so drag-selection works
-  where sites block it. It is **auto-enabled only on likely-Icelandic pages** (gated in `content.js`
-  via `looksIcelandic()`), so it stays dormant on English sites; the popup toggle can force it on
-  any page. All its listeners are added/removed together in `TI.word.setEnabled`.
+- **Look-up mode** is a **press-and-hold resolved on RELEASE**: hold a word in place ~350ms
+  (`PRESS_MS`) then lift to open the look-up; a quick tap passes straight through to the page, so
+  it never hijacks normal taps/navigation (works on over-clickable layouts like Facebook). The
+  decision happens in `onPointerUp` (always delivered) — at `PRESS_MS` we only highlight the word
+  (`armHold`); we **never open the popover or block selection mid-gesture**, so dragging selects
+  text natively and there is nothing to undo. A finger move >10px (`MOVE_TOL`) turns the press into
+  a scroll/selection drag. On a hold-release look-up we clear iOS's transient single-word selection
+  (`removeAllRanges`, so its callout doesn't linger) and briefly eat the synthesized
+  click/`contextmenu` (`suppressSynthetic`). `selectionchange`/`touchend` are gated on `pressActive`
+  so the selection chip waits for the press to resolve. While active it force-enables `user-select`
+  and `stopPropagation`s page `selectstart` handlers (never `preventDefault`) so drag-selection works
+  where sites block it. **Auto-enabled only on likely-Icelandic pages** (gated in `content.js` via
+  `looksIcelandic()`), so it stays dormant on English sites; the popup toggle can force it on any
+  page. All its listeners are added/removed together in `TI.word.setEnabled`.
+
+  *Why release-based:* firing during the hold and blocking the native `selectstart` half-engaged
+  iOS selection then cancelled it (drag never re-selected), and iOS captures the touch during
+  selection so `pointermove` stopped arriving (the popover wouldn't close). Deciding on release and
+  never blocking selection sidesteps both.
 - After editing Swift, check LSP diagnostics; prefer LSP navigation over grep for code.
 
 ## Build & test
