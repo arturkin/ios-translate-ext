@@ -16,7 +16,7 @@ import Foundation
 
 enum SharedStore {
     /// App Group used to share settings between the app and the extension.
-    static let appGroupID = "group.arturkin.Translate-Icelandic"
+    static let appGroupID = "group.arturkin.Translate-Icelandic-ios"
 
     static var defaults: UserDefaults {
         UserDefaults(suiteName: appGroupID) ?? .standard
