@@ -52,14 +52,6 @@ enum InflectionService {
         return ["ok": true, "lemma": lemma, "wordClass": wordClass, "forms": forms, "sourceUrl": binURL(lemma)]
     }
 
-    /// Best-effort lemma resolution for an inflected form; nil on any failure.
-    static func lemma(_ word: String) async -> String? {
-        let trimmed = word.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-        let search = try? await results(query: [("search", trimmed), ("type", "flat")])
-        return search?.first(where: { ($0["base_word"] as? String) != nil })?["base_word"] as? String
-    }
-
     private static func results(query: [(String, String)]) async throws -> [[String: Any]] {
         var comps = URLComponents(string: api)!
         comps.queryItems = query.map { URLQueryItem(name: $0.0, value: $0.1) }

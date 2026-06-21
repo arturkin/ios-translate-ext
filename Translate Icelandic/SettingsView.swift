@@ -51,9 +51,12 @@ struct SettingsView: View {
                 }
 
                 Section("Reading & learning") {
-                    Toggle("Tap a word to look it up", isOn: $tapToTranslate)
+                    Toggle("Select a word to look it up", isOn: $tapToTranslate)
                     Toggle("Auto-translate Icelandic pages", isOn: $autoTranslate)
-                    Toggle("Show Wiktionary definitions", isOn: $useWiktionary)
+                    // `useWiktionary` now gates the Glosbe dictionary link (we replaced the
+                    // inline Wiktionary definitions with a direct Glosbe link). Storage key
+                    // kept for settings-contract compatibility.
+                    Toggle("Show dictionary link (Glosbe)", isOn: $useWiktionary)
                     Toggle("Show BÍN inflections", isOn: $useBin)
                 }
 
@@ -67,7 +70,7 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Text("Personal use only. Text you translate is sent to your chosen translation service; tapped words are also sent to Wiktionary and BÍN.")
+                    Text("Personal use only. Text you translate is sent to your chosen translation service; words you look up are sent to BÍN for inflections. Glosbe opens in a new tab only when you tap the link.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
             }

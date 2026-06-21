@@ -44,16 +44,6 @@ export async function binInflect(word) {
     return { ok: true, lemma, wordClass, forms, sourceUrl: binLink(lemma) };
 }
 
-// Lemma resolution used by the Wiktionary inflected-form fallback. Returns null on any failure.
-export async function binLemma(word) {
-    try {
-        const s = await api({ search: word, type: "flat" });
-        return s?.results?.[0]?.base_word ?? null;
-    } catch {
-        return null;
-    }
-}
-
 async function api(params) {
     const qs = new URLSearchParams(params).toString();
     const res = await fetch(`${API}?${qs}`, { signal: AbortSignal.timeout(12000) });

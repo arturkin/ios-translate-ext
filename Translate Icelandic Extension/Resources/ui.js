@@ -51,6 +51,14 @@
         table.infl th { background: rgba(0,0,0,.04); font-weight: 600; }
         a.more { color: #007aff; text-decoration: none; font-size: 13px;
             display: inline-block; margin-top: 4px; }
+        button.disclosure {
+            all: unset; box-sizing: border-box; cursor: pointer;
+            color: #007aff; font-size: 13px; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 4px;
+            margin-top: 2px; -webkit-tap-highlight-color: transparent;
+        }
+        button.disclosure::after { content: "▾"; font-size: 11px; }
+        button.disclosure:active { opacity: .6; }
         .muted { color: #8e8e93; font-size: 13px; }
         .err { color: #ff3b30; font-size: 13px; }
         .spin { display: inline-block; width: 15px; height: 15px; vertical-align: -2px;
@@ -70,9 +78,20 @@
         }
         .fab.on { background: #34c759; }
         .fab .fab-ic { font-size: 22px; line-height: 1; }
-        .fab.labeled { padding: 0 16px; }       /* selection mode: expand into a pill */
-        .fab.labeled .fab-ic { font-size: 16px; }
-        .fab .fab-tx { font-size: 14px; white-space: nowrap; }
+        /* Inline "Look up" chip, anchored to the current text selection. Separate
+           from the page-translate FAB so selecting text never blocks selecting. */
+        .chip {
+            position: fixed; z-index: 2147483647; box-sizing: border-box;
+            display: inline-flex; align-items: center; gap: 6px;
+            height: 34px; padding: 0 14px;
+            font: 600 14px/1 -apple-system, system-ui, sans-serif;
+            color: #fff; background: #007aff; border: none;
+            border-radius: 17px; cursor: pointer; white-space: nowrap;
+            box-shadow: 0 4px 16px rgba(0,0,0,.3);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .chip:active { background: #0066d6; }
+        .chip .chip-ic { font-size: 15px; line-height: 1; }
         .toast {
             position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
             z-index: 2147483647; max-width: 80vw;
@@ -92,7 +111,8 @@
     `;
 
     let host, shadow, card, body, visible = false, gen = 0;
-    let fab = null, fabState = false, fabBase = false, fabSel = null, fabOnToggle = null;
+    let fab = null, fabState = false, fabBase = false, fabOnToggle = null;
+    let chip = null, chipShown = false, chipTap = null;
 
     function ensure() {
         if (host) return;
@@ -130,7 +150,7 @@
     // Hide when the underlying page scrolls, but NOT when the user scrolls inside
     // our own popover — in that case the event path runs through our host/card.
     function onScroll(e) {
-        if (!visible && !fabSel) return;       // nothing transient on screen → cheap exit
+        if (!visible && !chipShown) return;    // nothing transient on screen → cheap exit
         if (ownsEvent(e)) return;
         hide();
         clearSelection();
@@ -200,12 +220,6 @@
         fab = document.createElement("button");
         fab.className = "fab";
         fab.type = "button";
-        // In selection mode, keep the page selection alive when the button is
-        // pressed — a tap outside the selection would otherwise collapse it before
-        // the click handler reads it.
-        fab.addEventListener("pointerdown", (e) => {
-            if (fabSel) { e.preventDefault(); e.stopPropagation(); }
-        }, true);
         fab.addEventListener("click", onFabClick);
         shadow.appendChild(fab);
     }
@@ -213,12 +227,6 @@
     function onFabClick(e) {
         e.preventDefault();
         e.stopPropagation();
-        if (fabSel) {
-            const cb = fabSel;
-            clearSelection();          // back to the page-translate button
-            if (cb) cb();
-            return;
-        }
         fabState = !fabState;
         renderFab();
         if (fabOnToggle) fabOnToggle(fabState);
@@ -229,35 +237,20 @@
         fab.innerHTML = "";
         const ic = document.createElement("span");
         ic.className = "fab-ic";
-        if (fabSel) {
-            fab.classList.add("labeled");
-            fab.classList.remove("on");
-            ic.textContent = "🇮🇸";
-            const tx = document.createElement("span");
-            tx.className = "fab-tx";
-            tx.textContent = "Translate selection";
-            fab.appendChild(ic);
-            fab.appendChild(tx);
-            fab.setAttribute("aria-label", "Translate selection");
-            fab.title = "Translate selection";
-        } else {
-            fab.classList.remove("labeled");
-            fab.classList.toggle("on", fabState);
-            ic.textContent = fabState ? "↩" : "🇮🇸"; // ↩ : 🇮🇸
-            fab.appendChild(ic);
-            const label = fabState ? "Show original" : "Translate page";
-            fab.setAttribute("aria-label", label);
-            fab.title = label;
-        }
+        fab.classList.toggle("on", fabState);
+        ic.textContent = fabState ? "↩" : "🇮🇸"; // ↩ : 🇮🇸
+        fab.appendChild(ic);
+        const label = fabState ? "Show original" : "Translate page";
+        fab.setAttribute("aria-label", label);
+        fab.title = label;
         fab.setAttribute("aria-pressed", String(fabState));
     }
 
-    // Display the button when the page is translatable OR a selection is pending.
+    // Display the page-translate button only when the page is translatable.
     function refreshFab() {
         ensureFabEl();
-        const show = fabBase || !!fabSel;
-        fab.style.display = show ? "flex" : "none";
-        if (show) renderFab();
+        fab.style.display = fabBase ? "flex" : "none";
+        if (fabBase) renderFab();
     }
 
     // Show the page-translate button. `onToggle(on)` fires on each page tap.
@@ -270,22 +263,69 @@
 
     function hideFab() {
         fabBase = false;
-        refreshFab();              // stays visible if a selection is pending
+        refreshFab();
     }
 
     function setFabState(on) { fabState = !!on; refreshFab(); }
 
-    // Enter "Translate selection" mode; `onTap` runs when the button is pressed.
-    function setSelection(onTap) {
+    // --- selection "Look up" chip --------------------------------------------
+    // Anchored just above the current selection; tapping it opens the look-up. Kept
+    // separate from the page FAB so selecting/copying text is never hijacked: the
+    // OS makes the selection natively and this only adds an optional affordance.
+
+    function ensureChipEl() {
+        if (chip) return;
+        chip = document.createElement("button");
+        chip.className = "chip";
+        chip.type = "button";
+        // Keep the page selection alive when the chip is pressed — a pointerdown
+        // would otherwise collapse it before the click handler can read it.
+        chip.addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); }, true);
+        chip.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const cb = chipTap;
+            clearSelection();
+            if (cb) cb();
+        });
+        shadow.appendChild(chip);
+    }
+
+    function placeChip(rect) {
+        const m = 6, vw = window.innerWidth, vh = window.innerHeight;
+        const w = chip.offsetWidth, h = chip.offsetHeight;
+        let left = rect.left + rect.width / 2 - w / 2;
+        left = Math.max(m, Math.min(left, vw - w - m));
+        let top = rect.top - h - m;            // prefer just above the selection
+        if (top < m) top = rect.bottom + m;    // no room above → place below it
+        if (top + h > vh - m) top = Math.max(m, vh - h - m);
+        chip.style.left = left + "px";
+        chip.style.top = top + "px";
+    }
+
+    // Show the chip for the current selection `rect`. `label` is the button text;
+    // `onTap` runs when it's pressed.
+    function showSelectionChip(rect, label, onTap) {
         ensure();
-        fabSel = onTap || null;
-        refreshFab();
+        ensureChipEl();
+        chipTap = onTap || null;
+        chip.innerHTML = "";
+        const ic = document.createElement("span");
+        ic.className = "chip-ic";
+        ic.textContent = "🇮🇸";
+        chip.appendChild(ic);
+        chip.appendChild(document.createTextNode(label));
+        chip.setAttribute("aria-label", label);
+        chip.style.display = "inline-flex";
+        chipShown = true;
+        requestAnimationFrame(() => placeChip(rect));
     }
 
     function clearSelection() {
-        if (!fabSel) return;
-        fabSel = null;
-        refreshFab();
+        if (!chipShown) return;
+        chipShown = false;
+        chipTap = null;
+        if (chip) chip.style.display = "none";
     }
 
     function toast(message, kind) {
@@ -306,7 +346,7 @@
     TI.ui = {
         open, hide, toast, spinner, ownsEvent,
         showFab, hideFab, setFabState,
-        setSelection, clearSelection,
+        showSelectionChip, clearSelection,
         get visible() { return visible; },
     };
 })();

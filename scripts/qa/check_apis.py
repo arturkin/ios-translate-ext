@@ -70,36 +70,22 @@ try:
 except Exception as e:
     bad(f"request failed: {e}")
 
-# 2) Wiktionary — WiktionaryService: Icelandic section under "is".
-print("Wiktionary definition endpoint — 'is' section shape:")
+# 2) Inflected-form resolution — BÍN maps an inflected form to its lemma (base_word),
+#    which the inflection look-up relies on when you select a non-lemma form.
+print("Inflected-form lemma resolution ('hússins' → lemma 'hús'):")
 try:
-    _, body = get("https://en.wiktionary.org/api/rest_v1/page/definition/" + urllib.parse.quote("hestur"))
-    d = json.loads(body)
-    isarr = d.get("is")
-    if isinstance(isarr, list) and isarr and isarr[0].get("definitions"):
-        defn = isarr[0]["definitions"][0].get("definition", "")
-        ok(f"'is' entries[0].partOfSpeech='{isarr[0].get('partOfSpeech')}', def='{defn[:38]}…'")
-    else:
-        bad("'is' section / definitions[].definition missing — WiktionaryService would return empty")
-except Exception as e:
-    bad(f"request failed: {e}")
-
-# 3) Inflected-form lemma fallback chain (WiktionaryService + InflectionService.lemma).
-print("Inflected-form lemma fallback ('hússins' → lemma 'hús'):")
-try:
-    inflected_code, _ = get("https://en.wiktionary.org/api/rest_v1/page/definition/" + urllib.parse.quote("hússins"))
     q = urllib.parse.urlencode({"search": "hússins", "type": "flat"})
     _, body = get("https://ylhyra.is/api/inflection?" + q)
     res = json.loads(body).get("results", [])
     lemma = res[0].get("base_word") if res else None
     if lemma == "hús":
-        ok(f"BÍN resolves lemma 'hús' (raw inflected lookup returned HTTP {inflected_code})")
+        ok("BÍN resolves lemma 'hús' for inflected 'hússins'")
     else:
-        bad(f"lemma resolution failed (got {lemma!r}) — inflected-form definitions would break")
+        bad(f"lemma resolution failed (got {lemma!r}) — inflected-form look-up would degrade")
 except Exception as e:
     bad(f"request failed: {e}")
 
-# 4) ylhyra search → BIN_id  (InflectionService step 1).
+# 3) ylhyra search → BIN_id  (InflectionService step 1).
 print("BÍN/ylhyra search → base_word + BIN_id:")
 bin_id = None
 try:
@@ -115,7 +101,7 @@ try:
 except Exception as e:
     bad(f"request failed: {e}")
 
-# 5) ylhyra by id → full paradigm  (InflectionService step 2).
+# 4) ylhyra by id → full paradigm  (InflectionService step 2).
 print("BÍN/ylhyra full paradigm by id → inflectional_form rows:")
 try:
     the_id = bin_id if bin_id is not None else 6179
@@ -131,7 +117,7 @@ try:
 except Exception as e:
     bad(f"request failed: {e}")
 
-# 6) Azure — only when a key is provided.
+# 5) Azure — only when a key is provided.
 print("Azure Translator (AzureTranslationProvider):")
 key = os.environ.get("AZURE_TRANSLATOR_KEY")
 region = os.environ.get("AZURE_TRANSLATOR_REGION", "")

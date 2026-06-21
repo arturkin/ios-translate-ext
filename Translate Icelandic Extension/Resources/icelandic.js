@@ -29,7 +29,11 @@
         return text.toLowerCase().split(/[^a-záéíóúýöþðæ]+/).filter(Boolean);
     }
 
-    // Returns true when `text` looks like Icelandic worth translating.
+    // Returns true when a SHORT string (a tapped word, a selection, one text node)
+    // looks like Icelandic worth translating. Deliberately sensitive: a single þ/ð/æ
+    // in a short string is a strong tell. Used per-node by the page translator and on
+    // the selection chip — NOT for deciding whether a whole page is Icelandic (that is
+    // isLikelyIcelandicPage, which needs a density of signal, not mere presence).
     function isLikelyIcelandic(text) {
         if (!text) return false;
         const letters = (text.match(/[a-záéíóúýöþðæA-ZÁÉÍÓÚÝÖÞÐÆ]/g) || []).length;
@@ -46,6 +50,40 @@
         if (stop >= 2) return true;
         if (stop >= 1 && accents >= 1) return true;
         if (ws.length >= 4 && stop / ws.length >= 0.25) return true;
+        return false;
+    }
+
+    // Returns true only when a PAGE-SIZED sample reads as genuinely Icelandic.
+    //
+    // This is the strict gate for surfacing the floating "Translate page" button and
+    // auto-enabling look-up — it must stay dormant on English pages. The single-char
+    // rule that isLikelyIcelandic uses is wrong here: English pages routinely carry a
+    // stray þ/ð/æ (a name like "Þór"), an accent ("café", "naïve"), or a token like
+    // "var", and one such hit must NOT flip a whole English page to "Icelandic".
+    //
+    // Real Icelandic running text is DENSE in both function words (og/að/er/í/á/…) and
+    // in þ/ð/æ, so we require a real ratio of each, over enough words to be meaningful —
+    // not just presence. A predominantly-English page with an island of Icelandic stays
+    // below the bar (the user can still force look-up from the popup, or select the
+    // Icelandic text to get the chip).
+    function isLikelyIcelandicPage(text) {
+        if (!text) return false;
+        const ws = words(text);
+        const n = ws.length;
+        if (n < 12) return false;                 // too little text to judge a "page"
+
+        let stop = 0, special = 0;
+        for (const w of ws) {
+            if (STOPWORDS.has(w)) stop++;
+            if (STRONG.test(w)) special++;
+        }
+        const stopRatio = stop / n;
+        const specialRatio = special / n;
+
+        if (stop >= 4 && stopRatio >= 0.06) return true;        // clear function-word density
+        if (special >= 5 && specialRatio >= 0.04) return true;  // clear þ/ð/æ density
+        // Both present at a moderate level together (handles shorter samples).
+        if (stop >= 3 && special >= 3 && stopRatio + specialRatio >= 0.08) return true;
         return false;
     }
 
@@ -86,5 +124,5 @@
         return { word: text.slice(start, end), start, end };
     }
 
-    TI.ice = { isLikelyIcelandic, wordAt };
+    TI.ice = { isLikelyIcelandic, isLikelyIcelandicPage, wordAt };
 })();

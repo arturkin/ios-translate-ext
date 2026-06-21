@@ -4,7 +4,7 @@
 
     "name": "__MSG_extension_name__",
     "description": "__MSG_extension_description__",
-    "version": "1.0",
+    "version": "1.1",
 
     "icons": {
         "48": "images/icon-48.png",
@@ -42,12 +42,11 @@
         }
     },
 
-    "permissions": [ "storage", "activeTab", "tabs" ],
+    "permissions": [ "storage", "activeTab" ],
 
     "host_permissions": [
         "https://api.cognitive.microsofttranslator.com/*",
         "https://api.mymemory.translated.net/*",
-        "https://en.wiktionary.org/*",
         "https://ylhyra.is/*"
     ]
 }

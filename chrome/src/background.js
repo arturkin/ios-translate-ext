@@ -5,12 +5,11 @@
 // no native app, so this worker calls the four web APIs directly with fetch() (allowed cross-origin
 // from the worker via manifest host_permissions — no CORS, no DOM needed). Everything else is the
 // same as the Safari background.js: the message router, the persisted translation cache, the
-// per-word define/inflect memo caches, and the never-cache-empty rules.
+// per-word inflect memo cache, and the never-cache-empty rules.
 
 import "./browser-polyfill.min.js"; // sets globalThis.browser (promise-based browser.* in Chrome)
 import { azureTranslate } from "./services/azure.js";
 import { myMemoryTranslate } from "./services/mymemory.js";
-import { wiktionaryDefine } from "./services/wiktionary.js";
 import { binInflect } from "./services/inflection.js";
 import { getSettings, hasAzureKey, statusResponse } from "./services/settings.js";
 
@@ -18,7 +17,6 @@ const CACHE_KEY = "trcache";
 const CACHE_MAX = 3000;
 
 const trCache = new Map();   // "is\nen\ntext" -> translated string
-const defCache = new Map();  // word -> define response
 const inflCache = new Map(); // word -> inflect response
 
 const cacheReady = (async () => {
@@ -100,12 +98,6 @@ function handle(msg) {
     switch (msg.type) {
         case "translate":
             return doTranslate(msg.payload);
-        case "define": {
-            const word = (msg.payload && msg.payload.word) || "";
-            return cached(defCache, word,
-                () => wiktionaryDefine(word),
-                (r) => Array.isArray(r.entries) && r.entries.length > 0);
-        }
         case "inflect": {
             const word = (msg.payload && msg.payload.word) || "";
             return cached(inflCache, word,

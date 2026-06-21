@@ -55,6 +55,19 @@ try {
   eq("isLikelyIcelandic('a')", ice.isLikelyIcelandic("a"), false);
   eq("isLikelyIcelandic('')", ice.isLikelyIcelandic(""), false);
 
+  // Page gate: requires a DENSITY of Icelandic, so a stray þ/accent on an English
+  // page must NOT qualify (this is the fix for "the button shows on English sites").
+  const isPara = "Þetta er frétt um veðrið á Íslandi. Það verður mjög kalt í dag og á morgun, "
+    + "en helgin verður betri. Margir fara til útlanda þegar veturinn kemur. Við þurfum að "
+    + "muna eftir því að klæða okkur vel áður en við förum út í kuldann.";
+  const enPara = "This is an English news article about travel. Our writer Þóra visited a lovely "
+    + "café in the city and wrote about her favorite art. The weather was great and everyone "
+    + "had fun during the summer festival downtown this year while the var name stayed put.";
+  eq("isLikelyIcelandicPage(real Icelandic paragraph)", ice.isLikelyIcelandicPage(isPara), true);
+  eq("isLikelyIcelandicPage(English + stray þ/accent)", ice.isLikelyIcelandicPage(enPara), false);
+  eq("isLikelyIcelandicPage('Þetta er gott.')", ice.isLikelyIcelandicPage("Þetta er gott."), false); // too short to judge a page
+  eq("isLikelyIcelandicPage('')", ice.isLikelyIcelandicPage(""), false);
+
   // Word segmentation under a tap offset.
   const w = ice.wordAt("hús og bíll", 1);
   eq("wordAt('hús og bíll', 1).word", w && w.word, "hús");

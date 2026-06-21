@@ -14,7 +14,6 @@ enum MessageRouter {
         do {
             switch type {
             case "translate": return try await translate(payload)
-            case "define":    return try await WiktionaryService.define(word(payload))
             case "inflect":   return try await InflectionService.inflect(word(payload))
             case "status":    return status()
             default:          return ["ok": false, "error": "unknown message type: \(type)"]

@@ -31,7 +31,9 @@
     function looksIcelandic() {
         try {
             const t = sampleText(2000);
-            return t.length > 40 && TI.ice.isLikelyIcelandic(t);
+            // Strict, density-based page gate (not the per-string heuristic) so the
+            // button / look-up stay dormant on English pages that carry a stray þ/accent.
+            return t.length > 40 && TI.ice.isLikelyIcelandicPage(t);
         } catch (_) { return false; }
     }
 

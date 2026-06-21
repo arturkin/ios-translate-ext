@@ -5,9 +5,9 @@ Guidance for working in this repository.
 ## What this is
 
 A personal-use **Safari Web Extension (iOS 18+)** that translates Icelandic → English on web
-pages and offers a tap-a-word "Look Up" (gloss + Wiktionary + BÍN inflections). Manifest V3,
-built from Xcode's Safari Extension App template. **Personal use only** — no App Store goals,
-keep it minimal.
+pages and offers a select-a-word "Look Up" (gloss + Glosbe dictionary link + lazy BÍN
+inflection table). Manifest V3, built from Xcode's Safari Extension App template. **Personal use
+only** — no App Store goals, keep it minimal.
 
 ## Layout
 
@@ -24,7 +24,6 @@ Translate Icelandic Extension/
   Services/TranslationProvider.swift     Pluggable backend protocol + errors
   Services/AzureTranslationProvider.swift   Default backend (Azure Translator v3)
   Services/FallbackTranslationProvider.swift Keyless fallback (MyMemory), sequential
-  Services/WiktionaryService.swift       Definitions; lemma fallback for inflected forms
   Services/InflectionService.swift       BÍN inflections via ylhyra.is (search → id)
   Shared/SharedStore.swift               App Group settings  ⚠️ MIRRORED (see below)
   TranslateIcelandicExtension.entitlements  App Group
@@ -39,7 +38,7 @@ chrome/                                  Desktop-Chrome build (Chromium: Edge/Br
   src/manifest.json                      MV3; service_worker + host_permissions (no nativeMessaging)
   src/background.js                      Service worker: SAME router/cache as Safari; native() seam
                                            replaced by direct fetch() to the services below
-  src/services/azure.js mymemory.js wiktionary.js inflection.js   JS ports of the Swift services
+  src/services/azure.js mymemory.js inflection.js   JS ports of the Swift services
   src/services/settings.js               Baked-config + defaults → status response
   src/package.json                       {"type":"module"} for Node tooling only (not shipped)
   config.example.js                      Tracked template; copy to config.local.js (gitignored)
@@ -56,15 +55,16 @@ scripts/build-chrome.mjs                 Assembles chrome/dist/ from Resources/ 
 - **JS never holds the API key and never calls translation/dictionary APIs directly.** Content
   scripts message `background.js`; only the background calls the native handler via
   `browser.runtime.sendNativeMessage`; only the native side (Swift) reads the key and makes
-  network requests. This keeps the secret in the App Group and avoids CORS.
+  network requests. This keeps the secret in the App Group and avoids CORS. (The Glosbe dictionary
+  is just an external link the user opens — no API call, no message.)
 - **Message protocol** (`{ type, payload }` → `{ ok, ... }`):
   - `translate` `{texts,from,to}` → `{ok, translations:[String]}`
-  - `define` `{word}` → `{ok, entries:[{partOfSpeech, definitions:[String]}], sourceUrl}`
   - `inflect` `{word}` → `{ok, lemma, wordClass, forms:[{label, form}], sourceUrl}`
   - `status` → `{ok, provider, hasKey, region, useWiktionary, useBin, tapToTranslate, autoTranslate}`
+    (`useWiktionary` is a legacy key name — it now gates the **Glosbe** dictionary link, not Wiktionary.)
   - On failure: `{ ok: false, error }` (JS rejects).
 - **Caching** lives in `background.js`: translations are cached in `storage.local` (keyed by
-  `from\nto\ntext`, capped, persisted); define/inflect are cached in memory per word.
+  `from\nto\ntext`, capped, persisted); `inflect` is cached in memory per word.
 
 ## Chrome build (the seam)
 
@@ -87,7 +87,7 @@ scripts/build-chrome.mjs                 Assembles chrome/dist/ from Resources/ 
   at build time; feature toggles use `SharedStore`'s defaults in `services/settings.js`. No key →
   MyMemory fallback. There is **no options/settings UI** in Chrome (popup per-session toggles only).
 - **`User-Agent` can't be set from `fetch()`** (forbidden header); the Swift services' descriptive UA
-  is dropped — the browser's own UA satisfies Wiktionary/ylhyra.
+  is dropped — the browser's own UA satisfies ylhyra.
 - **Action icon must be PNG** in Chrome (`images/icon-*.png`), not Safari's `toolbar-icon.svg`.
 
 ## Conventions & gotchas
@@ -108,28 +108,31 @@ scripts/build-chrome.mjs                 Assembles chrome/dist/ from Resources/ 
 - **Resource layout is FLAT.** Web resources in `Resources/` subfolders get path-flattened into
   the bundle (breaking `manifest.json` paths), so all JS/HTML/CSS live at `Resources/` root.
   Exceptions are `images/` and `_locales/`, which are folder references (`explicitFolders`).
-- **Icelandic detection** (`icelandic.js`) is a heuristic to skip English and save quota
-  (þ/ð/æ are strong signals; plus stopwords + accents). The API still does authoritative
-  detection. Tune the word list there, not elsewhere.
-- **Look-up mode** is a **press-and-hold resolved on RELEASE**: hold a word in place ~350ms
-  (`PRESS_MS`) then lift to open the look-up; a quick tap passes straight through to the page, so
-  it never hijacks normal taps/navigation (works on over-clickable layouts like Facebook). The
-  decision happens in `onPointerUp` (always delivered) — at `PRESS_MS` we only highlight the word
-  (`armHold`); we **never open the popover or block selection mid-gesture**, so dragging selects
-  text natively and there is nothing to undo. A finger move >10px (`MOVE_TOL`) turns the press into
-  a scroll/selection drag. On a hold-release look-up we clear iOS's transient single-word selection
-  (`removeAllRanges`, so its callout doesn't linger) and briefly eat the synthesized
-  click/`contextmenu` (`suppressSynthetic`). `selectionchange`/`touchend` are gated on `pressActive`
-  so the selection chip waits for the press to resolve. While active it force-enables `user-select`
-  and `stopPropagation`s page `selectstart` handlers (never `preventDefault`) so drag-selection works
-  where sites block it. **Auto-enabled only on likely-Icelandic pages** (gated in `content.js` via
-  `looksIcelandic()`), so it stays dormant on English sites; the popup toggle can force it on any
-  page. All its listeners are added/removed together in `TI.word.setEnabled`.
-
-  *Why release-based:* firing during the hold and blocking the native `selectstart` half-engaged
-  iOS selection then cancelled it (drag never re-selected), and iOS captures the touch during
-  selection so `pointermove` stopped arriving (the popover wouldn't close). Deciding on release and
-  never blocking selection sidesteps both.
+- **Icelandic detection** (`icelandic.js`) has **two** heuristics, used in different places:
+  - `isLikelyIcelandic(text)` — *sensitive*, for SHORT strings (one text node in the page
+    translator, one selection). A single þ/ð/æ is enough; stopwords + accents also count.
+  - `isLikelyIcelandicPage(text)` — *strict, density-based*, for the PAGE gate (`content.js`
+    `looksIcelandic()` → the floating button + auto-enabling look-up). A lone þ/accent/`var` on an
+    English page must NOT flip it, so this needs a real ratio of stopwords AND/OR þ/ð/æ over enough
+    words. Tune both here; the translation API still does authoritative per-text detection.
+- **Look-up is SELECTION-DRIVEN** (`wordLookup.js`), deliberately *not* a press-and-hold — long-press
+  is iOS's own text-selection gesture and stealing it fought normal selecting/copying. We never open
+  anything on press and never touch the OS selection. Instead: the OS selects natively (a word via
+  long-press, a phrase by dragging); when an Icelandic selection settles (`selectionchange`/`mouseup`/
+  `touchend` → `onSelectionEnd`, 30ms debounce) we show an inline **"Look up"/"Translate" chip**
+  (`TI.ui.showSelectionChip`, anchored above the selection); tapping the chip opens the look-up
+  panel. A single token only needs to be *word-like* (≥2 letters) since the feature is already gated
+  to Icelandic pages; multi-word selections keep the stricter `isLikelyIcelandic` filter. The chip's
+  `pointerdown` does `preventDefault`+`stopPropagation` so pressing it doesn't collapse the selection.
+  While active it force-enables `user-select` and `stopPropagation`s page `selectstart` handlers
+  (never `preventDefault`) so drag-selection works where sites block it (Facebook). **Auto-enabled
+  only on likely-Icelandic pages** (gated in `content.js` via `looksIcelandic()`); the popup toggle
+  can force it on any page. All listeners are added/removed together in `TI.word.setEnabled`.
+- **Look-up panel is cheap to open:** on open it only fetches the gloss (`translate`). The **Glosbe**
+  dictionary is a plain external link (`https://glosbe.com/is/en/<word>`, no fetch). The **BÍN
+  inflection table is lazy** — a "Show inflection table" disclosure that calls `inflect` (and fills
+  the lemma line) only when tapped. Both sections are gated by the `useWiktionary` (now "dictionary
+  link") and `useBin` settings respectively.
 - After editing Swift, check LSP diagnostics; prefer LSP navigation over grep for code.
 
 ## Build & test
@@ -167,7 +170,8 @@ contracts, the build, and unit tests without a device.
 - **Azure Translator** v3 `POST /translate?api-version=3.0&from=is&to=en` — headers
   `Ocp-Apim-Subscription-Key`, `Ocp-Apim-Subscription-Region`. Free F0: 2M chars/month.
 - **MyMemory** `GET /get?q=&langpair=is|en` — keyless fallback, rate-limited.
-- **Wiktionary** `GET /api/rest_v1/page/definition/{word}` — Icelandic entries under `is`;
-  send a descriptive `User-Agent`.
 - **BÍN / ylhyra** `GET /api/inflection?search={word}` → lemma + `BIN_id`, then
   `?id={BIN_id}&type=flat` → full paradigm (one entry per form). Falls back to a BÍN page link.
+- **Glosbe** — *not an API call*: the look-up panel just links to `https://glosbe.com/is/en/{word}`
+  (replaced the old Wiktionary definition fetch; Glosbe's bilingual examples are more useful and a
+  link keeps the panel fast).

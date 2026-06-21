@@ -2,7 +2,7 @@
 // Validates the Chrome build without a browser:
 //   1. Runs scripts/build-chrome.mjs (assembles chrome/dist/).
 //   2. Checks the produced manifest.json is a sane MV3 Chrome manifest with the right backend
-//      shape and host_permissions for all four APIs.
+//      shape and host_permissions for all three APIs.
 //   3. Asserts every file the manifest references actually exists in dist/.
 //   4. Syntax-checks (`node --check`) every .js in dist/ as ESM (via dist/package.json).
 //
@@ -48,7 +48,6 @@ try {
 const REQUIRED_HOSTS = [
     "https://api.cognitive.microsofttranslator.com/*",
     "https://api.mymemory.translated.net/*",
-    "https://en.wiktionary.org/*",
     "https://ylhyra.is/*",
 ];
 
@@ -69,7 +68,7 @@ if (manifest) {
     const hosts = manifest.host_permissions || [];
     const missing = REQUIRED_HOSTS.filter((h) => !hosts.includes(h));
     missing.length === 0
-        ? ok("host_permissions covers all four API origins")
+        ? ok("host_permissions covers all three API origins")
         : bad("host_permissions missing: " + missing.join(", "));
 
     const cs = manifest.content_scripts?.[0]?.js || [];

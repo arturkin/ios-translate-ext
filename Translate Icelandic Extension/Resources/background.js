@@ -1,8 +1,8 @@
 // background.js — the only context allowed to talk to the native app handler.
 //
 // Responsibilities:
-//   • Route content-script requests (translate / define / inflect / status) to the
-//     native Swift handler via browser.runtime.sendNativeMessage.
+//   • Route content-script requests (translate / inflect / status) to the native
+//     Swift handler via browser.runtime.sendNativeMessage.
 //   • Cache translations (persisted in storage.local) so repeated text and
 //     re-translates don't burn Azure quota.
 //   • De-duplicate texts within a single translate request.
@@ -12,7 +12,6 @@ const CACHE_KEY = "trcache";
 const CACHE_MAX = 3000;
 
 const trCache = new Map();             // "is\nen\ntext" -> translated string
-const defCache = new Map();            // word -> define response
 const inflCache = new Map();           // word -> inflect response
 
 const cacheReady = (async () => {
@@ -101,12 +100,6 @@ function handle(msg) {
     switch (msg.type) {
         case "translate":
             return doTranslate(msg.payload);
-        case "define": {
-            const word = (msg.payload && msg.payload.word) || "";
-            return cached(defCache, word,
-                () => native({ type: "define", payload: { word } }),
-                (r) => Array.isArray(r.entries) && r.entries.length > 0);
-        }
         case "inflect": {
             const word = (msg.payload && msg.payload.word) || "";
             return cached(inflCache, word,
