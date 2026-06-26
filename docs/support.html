@@ -38,6 +38,8 @@
     @media (prefers-color-scheme: dark) { hr { border-color: #3a3a3c; } }
     footer { color: #86868b; font-size: .85rem; margin-top: 2rem; }
     nav { font-size: .9rem; margin-bottom: 2rem; }
+    .reveal-email { font: inherit; color: #0066cc; background: none; border: none; padding: 0; cursor: pointer; text-decoration: underline; }
+    @media (prefers-color-scheme: dark) { .reveal-email { color: #6cb4ff; } }
   </style>
 </head>
 <body>
@@ -48,7 +50,7 @@
 
   <div class="card contact">
     <strong>Need help or have a question?</strong><br>
-    Email <a href="mailto:artur@travelshift.com?subject=Translate%20Icelandic%20support">artur@travelshift.com</a>
+    <button type="button" class="reveal-email" data-e="YXJ0dXJAdHJhdmVsc2hpZnQuY29t" data-s="Translate%20Icelandic%20support">Show email address</button>
     and I'll get back to you. Please include your device, OS version, and the website you were on.
   </div>
 
@@ -56,7 +58,7 @@
   <p>
     <strong>Translate Icelandic</strong> is a Safari extension that translates Icelandic web
     pages into English and lets you look up individual Icelandic words. Select a word or phrase to
-    see an instant gloss, a link to the Glosbe bilingual dictionary, and — on request — the full
+    see its English meaning, a link to the Glosbe bilingual dictionary, and — on request — the full
     BÍN inflection table for the word.
   </p>
 
@@ -82,7 +84,7 @@
     <li><strong>Translate a whole page:</strong> on an Icelandic page a floating 🇮🇸 button appears
       — tap it to translate the visible text to English.</li>
     <li><strong>Look up a word:</strong> select a word or phrase. A small <em>“Look up”</em> chip
-      appears next to your selection; tap it to open the look-up panel with the English gloss.</li>
+      appears next to your selection; tap it to open the look-up panel with the English meaning.</li>
     <li><strong>See more:</strong> the panel links to the <strong>Glosbe</strong> dictionary
       (opens in a new tab) and has a <em>“Show inflection table”</em> button for the full BÍN
       paradigm of the word.</li>
@@ -120,8 +122,8 @@
 
   <h3>How do I report a bug or request a feature?</h3>
   <p class="contact">
-    Email <a href="mailto:artur@travelshift.com?subject=Translate%20Icelandic%20bug%20report">artur@travelshift.com</a>
-    with what you expected, what happened, and the page you were on. Screenshots help.
+    <button type="button" class="reveal-email" data-e="YXJ0dXJAdHJhdmVsc2hpZnQuY29t" data-s="Translate%20Icelandic%20bug%20report">Show email address</button>
+    and send what you expected, what happened, and the page you were on. Screenshots help.
   </p>
 
   <hr>
@@ -129,5 +131,18 @@
     Translate Icelandic · Support last updated June 2026 ·
     <a href="./privacy.html">Privacy Policy</a>
   </footer>
+
+  <script>
+    document.querySelectorAll(".reveal-email").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var email = atob(btn.getAttribute("data-e"));
+        var subj = btn.getAttribute("data-s");
+        var a = document.createElement("a");
+        a.href = "mailto:" + email + (subj ? "?subject=" + subj : "");
+        a.textContent = email;
+        btn.replaceWith(a);
+      });
+    });
+  </script>
 </body>
 </html>

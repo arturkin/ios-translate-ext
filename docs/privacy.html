@@ -30,6 +30,8 @@
     @media (prefers-color-scheme: dark) { hr { border-color: #3a3a3c; } }
     footer { color: #86868b; font-size: .85rem; margin-top: 2rem; }
     nav { font-size: .9rem; margin-bottom: 2rem; }
+    .reveal-email { font: inherit; color: #0066cc; background: none; border: none; padding: 0; cursor: pointer; text-decoration: underline; }
+    @media (prefers-color-scheme: dark) { .reveal-email { color: #6cb4ff; } }
   </style>
 </head>
 <body>
@@ -92,12 +94,25 @@
   <h2>Contact</h2>
   <p>
     Questions about this policy:
-    <a href="mailto:artur@travelshift.com?subject=Translate%20Icelandic%20privacy">artur@travelshift.com</a>.
+    <button type="button" class="reveal-email" data-e="YXJ0dXJAdHJhdmVsc2hpZnQuY29t" data-s="Translate%20Icelandic%20privacy">show email address</button>.
   </p>
 
   <hr>
   <footer>
     Translate Icelandic · <a href="./support.html">Support</a>
   </footer>
+
+  <script>
+    document.querySelectorAll(".reveal-email").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var email = atob(btn.getAttribute("data-e"));
+        var subj = btn.getAttribute("data-s");
+        var a = document.createElement("a");
+        a.href = "mailto:" + email + (subj ? "?subject=" + subj : "");
+        a.textContent = email;
+        btn.replaceWith(a);
+      });
+    });
+  </script>
 </body>
 </html>

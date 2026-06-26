@@ -30,12 +30,13 @@
     a.btn:hover { border-color: #0066cc; }
     footer { margin-top: 3rem; color: #86868b; font-size: .85rem; }
     footer a { color: inherit; }
+    .reveal-email { font: inherit; color: inherit; background: none; border: none; padding: 0; cursor: pointer; text-decoration: underline; }
   </style>
 </head>
 <body>
   <div class="flag">🇮🇸</div>
   <h1>Translate Icelandic</h1>
-  <p>A Safari extension that translates Icelandic web pages to English and lets you look up Icelandic words — gloss, dictionary link, and full inflection tables.</p>
+  <p>A Safari extension that translates Icelandic web pages to English and lets you look up Icelandic words — meanings, a dictionary link, and full inflection tables.</p>
 
   <div class="links">
     <a class="btn" href="./support.html">Support &amp; FAQ</a>
@@ -43,7 +44,20 @@
   </div>
 
   <footer>
-    Questions? <a href="mailto:artur@travelshift.com">artur@travelshift.com</a>
+    Questions? <button type="button" class="reveal-email" data-e="YXJ0dXJAdHJhdmVsc2hpZnQuY29t">show email address</button>
   </footer>
+
+  <script>
+    document.querySelectorAll(".reveal-email").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var email = atob(btn.getAttribute("data-e"));
+        var subj = btn.getAttribute("data-s");
+        var a = document.createElement("a");
+        a.href = "mailto:" + email + (subj ? "?subject=" + subj : "");
+        a.textContent = email;
+        btn.replaceWith(a);
+      });
+    });
+  </script>
 </body>
 </html>
