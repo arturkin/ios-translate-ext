@@ -10,10 +10,10 @@ keeps nothing on any server we control.
 
 ## What the extension processes
 
-- **Text you choose to translate or look up.** When you translate a page,
-  select a phrase, or press-and-hold a word, the relevant text is sent to a
-  translation or dictionary provider to return the result. No other page
-  content is read or transmitted.
+- **Text you choose to translate or look up.** When you translate a page or
+  select a word or phrase, the relevant text is sent to a translation or
+  dictionary provider to return the result. No other page content is read or
+  transmitted.
 - **Local settings and cache.** Your feature toggles and a cache of recent
   translations are stored locally in your browser (`storage.local`) so repeated
   lookups are instant. This data stays on your device; it is never uploaded to
@@ -26,11 +26,13 @@ to one of these third-party services, each governed by its own privacy policy:
 
 - **Microsoft Azure Translator** — translation.
 - **MyMemory (Translated Labs)** — translation, used as a keyless fallback.
-- **Wiktionary (Wikimedia Foundation)** — word definitions.
-- **ylhyra.is / BÍN (The Árni Magnússon Institute)** — Icelandic inflections.
+- **ylhyra.is / BÍN (The Árni Magnússon Institute)** — Icelandic inflections,
+  fetched only when you open a word's inflection table.
 
 These requests are made over HTTPS. We do not add identifiers to them, and we
-receive no copy of them.
+receive no copy of them. The word look-up panel also offers a link to the
+**Glosbe** dictionary (`glosbe.com`); opening that link is an ordinary web page
+visit you initiate — the extension does not send your data to Glosbe.
 
 ## What the extension does NOT do
 
@@ -42,7 +44,7 @@ receive no copy of them.
 ## Permissions
 
 The extension requests broad host access only so it can offer translation on any
-website you visit and reach the four translation/dictionary services above. It
+website you visit and reach the translation and dictionary services above. It
 does not use that access for any other purpose.
 
 ## Contact
